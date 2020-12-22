@@ -143,8 +143,24 @@ pub fn lin_space<T>(range: RangeInclusive<T>, steps: usize) -> LerpIterUsize<T, 
 where
     T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
 {
-    // lerp_usize_iter(0..=steps - 1, range, 0..steps)
     LerpIterUsize::new(0..=steps - 1, range, 0..steps)
+}
+
+/// Creates a linear space over range with a fixed number of steps, excluding the end value
+///
+/// ```
+/// use iter_num_tools::lin_space_ex;
+/// use itertools::Itertools;
+///
+/// let it = lin_space_ex(20.0..21.0, 2);
+/// itertools::assert_equal(it, vec![20.0, 20.5]);
+/// ```
+pub fn lin_space_ex<T>(range: Range<T>, steps: usize) -> LerpIterUsize<T, Range<usize>>
+where
+    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
+{
+    let Range { start, end } = range;
+    LerpIterUsize::new(0..=steps, start..=end, 0..steps)
 }
 
 use itertools::Itertools;
@@ -154,11 +170,11 @@ use itertools::Itertools;
 /// use iter_num_tools::grid_space;
 /// use itertools::Itertools;
 ///
-/// let it = grid_space((0.0, 0.0)..=(10.0, 20.0), (3, 5));
+/// let it = grid_space((0.0, 0.0)..=(1.0, 2.0), (3, 5));
 /// itertools::assert_equal(it, vec![
-///     (0.0, 0.0), (0.0, 5.0), (0.0, 10.0), (0.0, 15.0), (0.0, 20.0),
-///     (5.0, 0.0), (5.0, 5.0), (5.0, 10.0), (5.0, 15.0), (5.0, 20.0),
-///     (10.0, 0.0), (10.0, 5.0), (10.0, 10.0), (10.0, 15.0), (10.0, 20.0),
+///     (0.0, 0.0), (0.0, 0.5), (0.0, 1.0), (0.0, 1.5), (0.0, 2.0),
+///     (0.5, 0.0), (0.5, 0.5), (0.5, 1.0), (0.5, 1.5), (0.5, 2.0),
+///     (1.0, 0.0), (1.0, 0.5), (1.0, 1.0), (1.0, 1.5), (1.0, 2.0),
 /// ]);
 /// ```
 pub fn grid_space<T>(
@@ -179,5 +195,40 @@ where
 
     let wl = lin_space(w0..=w1, w);
     let hl = lin_space(h0..=h1, h);
+    wl.cartesian_product(hl)
+}
+
+/// Creates a linear grid space over range with a fixed number of width and height steps, excluding the end values
+///
+/// ```
+/// use iter_num_tools::grid_space_ex;
+/// use itertools::Itertools;
+///
+/// let it = grid_space_ex((0.0, 0.0)..(1.0, 2.0), (2, 4));
+/// itertools::assert_equal(it, vec![
+///     (0.0, 0.0), (0.0, 0.5), (0.0, 1.0), (0.0, 1.5),
+///     (0.5, 0.0), (0.5, 0.5), (0.5, 1.0), (0.5, 1.5),
+/// ]);
+/// ```
+pub fn grid_space_ex<T>(
+    range: Range<(T, T)>,
+    (w, h): (usize, usize),
+) -> impl Iterator<Item = (T, T)>
+where
+    T: FromPrimitive
+        + Mul<Output = T>
+        + Sub<Output = T>
+        + Add<Output = T>
+        + Div<Output = T>
+        + Copy
+        + Clone,
+{
+    let Range {
+        start: (w0, h0),
+        end: (w1, h1),
+    } = range;
+
+    let wl = lin_space_ex(w0..w1, w);
+    let hl = lin_space_ex(h0..h1, h);
     wl.cartesian_product(hl)
 }
