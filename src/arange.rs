@@ -20,18 +20,18 @@ impl<T> Arange<T> {
     /// itertools::assert_equal(it, vec![0.0, 0.5, 1.0, 1.5])
     /// ```
     ///
-    /// Arange isn't perfect, you might want [crate::lin_space_ex](lin_space_ex) if
+    /// Arange isn't perfect, you might want [lin_space](crate::lin_space) if
     /// `step` isn't 'whole' float
     ///
     /// ```
-    /// use iter_num_tools::{Arange, lin_space_ex};
+    /// use iter_num_tools::{Arange, lin_space};
     /// use itertools::Itertools;
     ///
     /// // With Arange, you get some accuracy loss
     /// let it = Arange::new(0.0..0.5, 0.1);
     /// itertools::assert_equal(it, vec![0.0, 0.1, 0.2, 0.30000000000000004, 0.4]);
     ///
-    /// let it = lin_space_ex(0.0..0.5, 5);
+    /// let it = lin_space(0.0..0.5, 5);
     /// itertools::assert_equal(it, vec![0.0, 0.1, 0.2, 0.3, 0.4]);
     /// ```
     pub fn new(range: Range<T>, step: T) -> Self {
