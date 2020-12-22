@@ -3,6 +3,8 @@ name = "iter_num_tools"
 version = "0.1.0"
 authors = ["Conrad Ludgate <conradludgate@gmail.com>"]
 edition = "2018"
+description = "A collection of convenient tools that I always have to remake when working with num/iterators"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
