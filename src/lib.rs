@@ -1,10 +1,12 @@
 mod arange;
 mod lerp;
+mod linspace;
 
 use std::ops::Range;
 
 pub use arange::*;
 pub use lerp::*;
+pub use linspace::*;
 
 use itertools::Itertools;
 

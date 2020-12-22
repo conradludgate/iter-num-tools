@@ -1,5 +1,5 @@
 use num_traits::FromPrimitive;
-use std::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
+use std::ops::{Add, Div, Mul, RangeInclusive, Sub};
 
 /// Wraps the given iterator and maps each value through a
 /// linear interpolation from the first range to the second
@@ -44,11 +44,59 @@ where
 {
     LerpIterUsize::new(from, to, over)
 }
+#[derive(Clone)]
+pub(crate) struct Lerp<T> {
+    x0: T,
+    x1: T,
+    y0: T,
+    y1: T,
+}
+
+impl<T> Lerp<T>
+where
+    T: FromPrimitive + Copy,
+{
+    pub(crate) fn new_usize(from: RangeInclusive<usize>, to: RangeInclusive<T>) -> Self {
+        Lerp {
+            x0: T::from_usize(*from.start()).unwrap(),
+            x1: T::from_usize(*from.end()).unwrap(),
+            y0: *to.start(),
+            y1: *to.end(),
+        }
+    }
+}
+
+impl<T> Lerp<T>
+where
+    T: Copy,
+{
+    pub(crate) fn new(from: RangeInclusive<T>, to: RangeInclusive<T>) -> Self {
+        Lerp {
+            x0: *from.start(),
+            x1: *from.end(),
+            y0: *to.start(),
+            y1: *to.end(),
+        }
+    }
+}
+
+impl<T> Lerp<T>
+where
+    T: Mul<Output = T> + Add<Output = T> + Sub<Output = T> + Div<Output = T> + Copy,
+{
+    fn lerp(&self, x: T) -> T {
+        let x0 = self.x0;
+        let x1 = self.x1;
+        let y0 = self.y0;
+        let y1 = self.y1;
+
+        ((y0 * (x1 - x)) + (y1 * (x - x0))) / (x1 - x0)
+    }
+}
 
 #[derive(Clone)]
 pub struct LerpIter<T, I> {
-    from: RangeInclusive<T>,
-    to: RangeInclusive<T>,
+    lerp: Lerp<T>,
     over: I,
 }
 
@@ -57,10 +105,12 @@ impl<T, I> LerpIter<T, I> {
         from: RangeInclusive<T>,
         to: RangeInclusive<T>,
         over: impl IntoIterator<Item = T, IntoIter = I>,
-    ) -> Self {
+    ) -> Self
+    where
+        T: Copy,
+    {
         LerpIter {
-            from,
-            to,
+            lerp: Lerp::new(from, to),
             over: over.into_iter(),
         }
     }
@@ -74,22 +124,33 @@ where
     type Item = T;
     fn next(&mut self) -> Option<Self::Item> {
         let x = self.over.next()?;
+        Some(self.lerp.lerp(x))
+    }
 
-        let x0 = *self.from.start();
-        let x1 = *self.from.end();
-        let y0 = *self.to.start();
-        let y1 = *self.to.end();
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.over.size_hint()
+    }
 
-        Some(((y0 * (x1 - x)) + (y1 * (x - x0))) / (x1 - x0))
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.over.count()
+    }
+
+    fn last(self) -> Option<Self::Item>
+    where
+        Self: Sized,
+    {
+        let LerpIter { lerp, over } = self;
+        let x = over.last()?;
+        Some(lerp.lerp(x))
     }
 }
 
 #[derive(Clone)]
 pub struct LerpIterUsize<T, I> {
-    x0: T,
-    x1: T,
-    y0: T,
-    y1: T,
+    lerp: Lerp<T>,
     over: I,
 }
 
@@ -103,10 +164,7 @@ where
         over: impl IntoIterator<Item = usize, IntoIter = I>,
     ) -> Self {
         LerpIterUsize {
-            x0: T::from_usize(*from.start()).unwrap(),
-            x1: T::from_usize(*from.end()).unwrap(),
-            y0: *to.start(),
-            y1: *to.end(),
+            lerp: Lerp::new_usize(from, to),
             over: over.into_iter(),
         }
     }
@@ -120,115 +178,26 @@ where
     type Item = T;
     fn next(&mut self) -> Option<Self::Item> {
         let x = T::from_usize(self.over.next()?).unwrap();
-
-        let x0 = self.x0;
-        let x1 = self.x1;
-        let y0 = self.y0;
-        let y1 = self.y1;
-
-        Some(((y0 * (x1 - x)) + (y1 * (x - x0))) / (x1 - x0))
+        Some(self.lerp.lerp(x))
     }
-}
 
-/// Creates a linear space over range with a fixed number of steps
-///
-/// ```
-/// use iter_num_tools::lin_space;
-/// use itertools::Itertools;
-///
-/// let it = lin_space(20.0..=21.0, 3);
-/// itertools::assert_equal(it, vec![20.0, 20.5, 21.0]);
-/// ```
-pub fn lin_space<T>(range: RangeInclusive<T>, steps: usize) -> LerpIterUsize<T, Range<usize>>
-where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
-{
-    LerpIterUsize::new(0..=steps - 1, range, 0..steps)
-}
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.over.size_hint()
+    }
 
-/// Creates a linear space over range with a fixed number of steps, excluding the end value
-///
-/// ```
-/// use iter_num_tools::lin_space_ex;
-/// use itertools::Itertools;
-///
-/// let it = lin_space_ex(20.0..21.0, 2);
-/// itertools::assert_equal(it, vec![20.0, 20.5]);
-/// ```
-pub fn lin_space_ex<T>(range: Range<T>, steps: usize) -> LerpIterUsize<T, Range<usize>>
-where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
-{
-    let Range { start, end } = range;
-    LerpIterUsize::new(0..=steps, start..=end, 0..steps)
-}
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.over.count()
+    }
 
-use itertools::Itertools;
-/// Creates a linear grid space over range with a fixed number of steps
-///
-/// ```
-/// use iter_num_tools::grid_space;
-/// use itertools::Itertools;
-///
-/// let it = grid_space((0.0, 0.0)..=(1.0, 2.0), (3, 5));
-/// itertools::assert_equal(it, vec![
-///     (0.0, 0.0), (0.0, 0.5), (0.0, 1.0), (0.0, 1.5), (0.0, 2.0),
-///     (0.5, 0.0), (0.5, 0.5), (0.5, 1.0), (0.5, 1.5), (0.5, 2.0),
-///     (1.0, 0.0), (1.0, 0.5), (1.0, 1.0), (1.0, 1.5), (1.0, 2.0),
-/// ]);
-/// ```
-pub fn grid_space<T>(
-    range: RangeInclusive<(T, T)>,
-    (w, h): (usize, usize),
-) -> impl Iterator<Item = (T, T)>
-where
-    T: FromPrimitive
-        + Mul<Output = T>
-        + Sub<Output = T>
-        + Add<Output = T>
-        + Div<Output = T>
-        + Copy
-        + Clone,
-{
-    let (w0, h0) = *range.start();
-    let (w1, h1) = *range.end();
-
-    let wl = lin_space(w0..=w1, w);
-    let hl = lin_space(h0..=h1, h);
-    wl.cartesian_product(hl)
-}
-
-/// Creates a linear grid space over range with a fixed number of width and height steps, excluding the end values
-///
-/// ```
-/// use iter_num_tools::grid_space_ex;
-/// use itertools::Itertools;
-///
-/// let it = grid_space_ex((0.0, 0.0)..(1.0, 2.0), (2, 4));
-/// itertools::assert_equal(it, vec![
-///     (0.0, 0.0), (0.0, 0.5), (0.0, 1.0), (0.0, 1.5),
-///     (0.5, 0.0), (0.5, 0.5), (0.5, 1.0), (0.5, 1.5),
-/// ]);
-/// ```
-pub fn grid_space_ex<T>(
-    range: Range<(T, T)>,
-    (w, h): (usize, usize),
-) -> impl Iterator<Item = (T, T)>
-where
-    T: FromPrimitive
-        + Mul<Output = T>
-        + Sub<Output = T>
-        + Add<Output = T>
-        + Div<Output = T>
-        + Copy
-        + Clone,
-{
-    let Range {
-        start: (w0, h0),
-        end: (w1, h1),
-    } = range;
-
-    let wl = lin_space_ex(w0..w1, w);
-    let hl = lin_space_ex(h0..h1, h);
-    wl.cartesian_product(hl)
+    fn last(self) -> Option<Self::Item>
+    where
+        Self: Sized,
+    {
+        let LerpIterUsize { lerp, over } = self;
+        let x = T::from_usize(over.last()?).unwrap();
+        Some(lerp.lerp(x))
+    }
 }
