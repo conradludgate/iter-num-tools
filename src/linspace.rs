@@ -1,4 +1,4 @@
-use crate::lerp::LerpIterUsize;
+use crate::lerp::LerpIterPrim;
 use num_traits::FromPrimitive;
 use std::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
 
@@ -11,11 +11,11 @@ use std::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
 /// let it = lin_space(20.0..=21.0, 3);
 /// itertools::assert_equal(it, vec![20.0, 20.5, 21.0]);
 /// ```
-pub fn lin_space<T>(range: RangeInclusive<T>, steps: usize) -> LerpIterUsize<T, Range<usize>>
+pub fn lin_space<T>(range: RangeInclusive<T>, steps: usize) -> LerpIterPrim<usize, T, Range<usize>>
 where
     T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
 {
-    LerpIterUsize::new(0..=steps - 1, range, 0..steps)
+    LerpIterPrim::<usize, T, Range<usize>>::new(0..=steps - 1, range, 0..steps)
 }
 
 /// Creates a linear space over range with a fixed number of steps, excluding the end value
@@ -29,12 +29,12 @@ where
 /// let it = lin_space_ex(20.0..21.0, 2);
 /// itertools::assert_equal(it, vec![20.0, 20.5]);
 /// ```
-pub fn lin_space_ex<T>(range: Range<T>, steps: usize) -> LerpIterUsize<T, Range<usize>>
+pub fn lin_space_ex<T>(range: Range<T>, steps: usize) -> LerpIterPrim<usize, T, Range<usize>>
 where
     T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
 {
     let Range { start, end } = range;
-    LerpIterUsize::new(0..=steps, start..=end, 0..steps)
+    LerpIterPrim::<usize, T, Range<usize>>::new(0..=steps, start..=end, 0..steps)
 }
 
 use itertools::Itertools;
@@ -64,8 +64,7 @@ where
         + Copy
         + Clone,
 {
-    let (w0, h0) = *range.start();
-    let (w1, h1) = *range.end();
+    let ((w0, h0), (w1, h1)) = range.into_inner();
 
     let wl = lin_space(w0..=w1, w);
     let hl = lin_space(h0..=h1, h);

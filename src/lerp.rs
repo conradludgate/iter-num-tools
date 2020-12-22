@@ -1,51 +1,8 @@
 use num_traits::FromPrimitive;
 use std::ops::{Add, Div, Mul, RangeInclusive, Sub};
 
-/// Wraps the given iterator and maps each value through a
-/// linear interpolation from the first range to the second
-///
-/// ```
-/// use iter_num_tools::lerp_iter;
-/// use itertools::Itertools;
-///
-/// let it = lerp_iter(0.0..=2.0, 20.0..=21.0, vec![-1.0, 1.0]);
-/// itertools::assert_equal(it, vec![19.5, 20.5]);
-/// ```
-pub fn lerp_iter<T, I>(
-    from: RangeInclusive<T>,
-    to: RangeInclusive<T>,
-    over: impl IntoIterator<Item = T, IntoIter = I>,
-) -> LerpIter<T, I>
-where
-    T: Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
-{
-    LerpIter::new(from, to, over)
-}
-
-/// Wraps the given iterator and maps each value through a
-/// linear interpolation from the first range to the second
-///
-/// Similar to [lerp_iter] but handles the conversion from usize
-///
-/// ```
-/// use iter_num_tools::lerp_usize_iter;
-/// use itertools::Itertools;
-///
-/// let it = lerp_usize_iter(0..=2, 20.0..=21.0, 0..5);
-/// itertools::assert_equal(it, vec![20.0, 20.5, 21.0, 21.5, 22.0]);
-/// ```
-pub fn lerp_usize_iter<T, I>(
-    from: RangeInclusive<usize>,
-    to: RangeInclusive<T>,
-    over: impl IntoIterator<Item = usize, IntoIter = I>,
-) -> LerpIterUsize<T, I>
-where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
-{
-    LerpIterUsize::new(from, to, over)
-}
-#[derive(Clone)]
-pub(crate) struct Lerp<T> {
+#[derive(Copy, Clone)]
+pub struct Lerp<T> {
     x0: T,
     x1: T,
     y0: T,
@@ -54,46 +11,77 @@ pub(crate) struct Lerp<T> {
 
 impl<T> Lerp<T>
 where
-    T: FromPrimitive + Copy,
 {
-    pub(crate) fn new_usize(from: RangeInclusive<usize>, to: RangeInclusive<T>) -> Self {
-        Lerp {
-            x0: T::from_usize(*from.start()).unwrap(),
-            x1: T::from_usize(*from.end()).unwrap(),
-            y0: *to.start(),
-            y1: *to.end(),
-        }
+    pub fn new(from: RangeInclusive<T>, to: RangeInclusive<T>) -> Self {
+        let (x0, x1) = from.into_inner();
+        let (y0, y1) = to.into_inner();
+        Lerp { x0, x1, y0, y1 }
     }
 }
 
+macro_rules! LerpPrimitive {
+    ($($name:ident; $t:ty; $from:ident),*) => {
+
 impl<T> Lerp<T>
 where
-    T: Copy,
+    T: FromPrimitive,
 {
-    pub(crate) fn new(from: RangeInclusive<T>, to: RangeInclusive<T>) -> Self {
+    $(
+
+    pub fn $name(from: RangeInclusive<$t>, to: RangeInclusive<T>) -> Self {
+        let (x0, x1) = from.into_inner();
+        let (y0, y1) = to.into_inner();
         Lerp {
-            x0: *from.start(),
-            x1: *from.end(),
-            y0: *to.start(),
-            y1: *to.end(),
+            x0: T::$from(x0).unwrap(),
+            x1: T::$from(x1).unwrap(),
+            y0,
+            y1,
         }
     }
+
+    )*
 }
+    };
+}
+
+LerpPrimitive![
+    new_usize; usize; from_usize,
+    new_u128; u128; from_u128,
+    new_u64; u64; from_u64,
+    new_u32; u32; from_u32,
+    new_u8; u8; from_u8,
+
+    new_isize; isize; from_isize,
+    new_i128; i128; from_i128,
+    new_i64; i64; from_i64,
+    new_i32; i32; from_i32,
+    new_i8; i8; from_i8,
+
+    new_f32; f32; from_f32,
+    new_f64; f64; from_f64
+];
 
 impl<T> Lerp<T>
 where
     T: Mul<Output = T> + Add<Output = T> + Sub<Output = T> + Div<Output = T> + Copy,
 {
     fn lerp(&self, x: T) -> T {
-        let x0 = self.x0;
-        let x1 = self.x1;
-        let y0 = self.y0;
-        let y1 = self.y1;
+        let Lerp { x0, x1, y0, y1 } = *self;
 
         ((y0 * (x1 - x)) + (y1 * (x - x0))) / (x1 - x0)
     }
 }
 
+/// Wraps a given iterator and maps each value through a
+/// linear interpolation from the first range to the second
+///
+/// ```
+/// use iter_num_tools::lerp::LerpIter;
+/// use itertools::Itertools;
+///
+/// let it = LerpIter::new(0.0..=2.0, 20.0..=21.0, vec![-1.0, 1.0]);
+/// itertools::assert_equal(it, vec![19.5, 20.5]);
+/// ```
 #[derive(Clone)]
 pub struct LerpIter<T, I> {
     lerp: Lerp<T>,
@@ -148,36 +136,61 @@ where
     }
 }
 
+/// Wraps a given iterator and maps each value through a
+/// linear interpolation from the first range to the second
+///
+/// Similar to [LerpIter] but handles conversions from primitive types
+///
+/// You probably want to look at [crate::lin_space] instead for a more
+/// convenient usage
+///
+/// ```
+/// use std::ops::Range;
+/// use iter_num_tools::lerp::LerpIterPrim;
+/// use itertools::Itertools;
+///
+/// let it = LerpIterPrim::<usize, f64, Range<usize>>::new(0..=2, 20.0..=21.0, 0..5);
+/// itertools::assert_equal(it, vec![20.0, 20.5, 21.0, 21.5, 22.0]);
+/// ```
 #[derive(Clone)]
-pub struct LerpIterUsize<T, I> {
+pub struct LerpIterPrim<P, T, I>
+where
+    I: Iterator<Item = P>,
+{
     lerp: Lerp<T>,
     over: I,
 }
 
-impl<T, I> LerpIterUsize<T, I>
+macro_rules! LerpIterPrimitive {
+    ($($new_lerp:ident; $t:ty; $from:ident),*) => {
+
+$(
+
+impl<T, I> LerpIterPrim<$t, T, I>
 where
     T: FromPrimitive + Copy,
+    I: Iterator<Item = $t>
 {
     pub fn new(
-        from: RangeInclusive<usize>,
+        from: RangeInclusive<$t>,
         to: RangeInclusive<T>,
         over: impl IntoIterator<Item = usize, IntoIter = I>,
     ) -> Self {
-        LerpIterUsize {
-            lerp: Lerp::new_usize(from, to),
+        LerpIterPrim {
+            lerp: Lerp::$new_lerp(from, to),
             over: over.into_iter(),
         }
     }
 }
 
-impl<T, I> Iterator for LerpIterUsize<T, I>
+impl<T, I> Iterator for LerpIterPrim<$t, T, I>
 where
-    I: Iterator<Item = usize>,
+    I: Iterator<Item = $t>,
     T: Mul<Output = T> + Add<Output = T> + Sub<Output = T> + Div<Output = T> + Copy + FromPrimitive,
 {
     type Item = T;
     fn next(&mut self) -> Option<Self::Item> {
-        let x = T::from_usize(self.over.next()?).unwrap();
+        let x = T::$from(self.over.next()?).unwrap();
         Some(self.lerp.lerp(x))
     }
 
@@ -196,8 +209,30 @@ where
     where
         Self: Sized,
     {
-        let LerpIterUsize { lerp, over } = self;
-        let x = T::from_usize(over.last()?).unwrap();
+        let LerpIterPrim { lerp, over } = self;
+        let x = T::$from(over.last()?).unwrap();
         Some(lerp.lerp(x))
     }
 }
+
+)*
+
+    }
+}
+
+LerpIterPrimitive![
+    new_usize; usize; from_usize,
+    new_u128; u128; from_u128,
+    new_u64; u64; from_u64,
+    new_u32; u32; from_u32,
+    new_u8; u8; from_u8,
+
+    new_isize; isize; from_isize,
+    new_i128; i128; from_i128,
+    new_i64; i64; from_i64,
+    new_i32; i32; from_i32,
+    new_i8; i8; from_i8,
+
+    new_f32; f32; from_f32,
+    new_f64; f64; from_f64
+];
