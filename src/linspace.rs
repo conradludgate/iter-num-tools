@@ -2,7 +2,7 @@ use crate::lerp::LerpIterPrim;
 use num_traits::FromPrimitive;
 use std::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
 
-pub type LinSpace<T> = LerpIterPrim<usize, T, Range<usize>>;
+pub type LinSpace<T> = LerpIterPrim<T, Range<usize>, usize>;
 
 /// Creates a linear space over range with a fixed number of steps
 ///
@@ -34,7 +34,7 @@ where
     T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
 {
     fn into_lin_space(self, steps: usize) -> LinSpace<T> {
-        LerpIterPrim::<usize, T, Range<usize>>::new(0..=steps - 1, self, 0..steps)
+        LinSpace::new(0..=steps - 1, self, 0..steps)
     }
 }
 
@@ -44,7 +44,7 @@ where
 {
     fn into_lin_space(self, steps: usize) -> LinSpace<T> {
         let Range { start, end } = self;
-        LerpIterPrim::<usize, T, Range<usize>>::new(0..=steps, start..=end, 0..steps)
+        LinSpace::new(0..=steps, start..=end, 0..steps)
     }
 }
 

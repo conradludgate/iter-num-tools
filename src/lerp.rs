@@ -149,11 +149,11 @@ where
 /// use iter_num_tools::lerp::LerpIterPrim;
 /// use itertools::Itertools;
 ///
-/// let it = LerpIterPrim::<usize, f64, Range<usize>>::new(0..=2, 20.0..=21.0, 0..5);
+/// let it = LerpIterPrim::<f64, Range<usize>, _>::new(0..=2, 20.0..=21.0, 0..5);
 /// itertools::assert_equal(it, vec![20.0, 20.5, 21.0, 21.5, 22.0]);
 /// ```
 #[derive(Clone)]
-pub struct LerpIterPrim<P, T, I>
+pub struct LerpIterPrim<T, I, P>
 where
     I: Iterator<Item = P>,
 {
@@ -166,7 +166,7 @@ macro_rules! LerpIterPrimitive {
 
 $(
 
-impl<T, I> LerpIterPrim<$t, T, I>
+impl<T, I> LerpIterPrim<T, I, $t>
 where
     T: FromPrimitive + Copy,
     I: Iterator<Item = $t>
@@ -183,7 +183,7 @@ where
     }
 }
 
-impl<T, I> Iterator for LerpIterPrim<$t, T, I>
+impl<T, I> Iterator for LerpIterPrim<T, I, $t>
 where
     I: Iterator<Item = $t>,
     T: Mul<Output = T> + Add<Output = T> + Sub<Output = T> + Div<Output = T> + Copy + FromPrimitive,

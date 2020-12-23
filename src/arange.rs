@@ -1,5 +1,5 @@
-use num_traits::{Float, ToPrimitive, Zero, One};
-use std::{assert_eq, ops::{AddAssign, Div, Range, Sub}};
+use num_traits::{Float, One, ToPrimitive, Zero};
+use std::ops::{AddAssign, Div, Range, Sub};
 
 /// Iterator over a range, stepping by a fixed amount each time
 #[derive(Clone, Copy)]
@@ -69,13 +69,23 @@ where
         let length = self.end - (self.start + self.step * self.step_size);
         match (length / self.step_size).ceil().to_usize() {
             Some(steps_left) => (steps_left, Some(steps_left)),
-            None => (0, None),
+            None => (usize::MAX, None),
+        }
+    }
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        match self.size_hint() {
+            (_, Some(x)) => x,
+            (_, None) => panic!("iterator is infinite"),
         }
     }
 }
 
 use itertools::{Itertools, Product};
-/// Creates a grid space over the range made up of fixed step intervales
+/// Creates a grid space over the range made up of fixed step intervals
 ///
 /// ```
 /// use iter_num_tools::arange_grid;
@@ -201,4 +211,7 @@ fn test_size_hint() {
 
     let it = Arange::new(0.0..0.5, 0.1);
     assert_eq!(it.size_hint(), (5, Some(5)));
+
+    let it = Arange::new(0.0..0.5, 0.0);
+    assert_eq!(it.size_hint(), (usize::MAX, None));
 }
