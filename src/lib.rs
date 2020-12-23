@@ -2,11 +2,13 @@ mod arange;
 pub mod lerp;
 mod linspace;
 pub mod combine;
+mod gridspace;
 
 use std::ops::Range;
 
 pub use arange::*;
 pub use linspace::*;
+pub use gridspace::*;
 
 use itertools::Itertools;
 

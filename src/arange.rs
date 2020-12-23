@@ -85,6 +85,8 @@ where
 }
 
 use itertools::{Itertools, Product};
+
+use crate::combine::Combine;
 /// Creates a grid space over the range made up of fixed step intervals
 ///
 /// ```
@@ -126,42 +128,50 @@ pub trait IntoArangeGrid<S> {
     fn into_arange_grid(self, size: S) -> Self::ArangeGrid;
 }
 
+type Grid2<F1, F2> = Product<Arange<F1>, Arange<F2>>;
+type Grid3<F1, F2, F3> = Combine<Product<Grid2<F1, F2>, Arange<F3>>>;
+
 // Implements IntoArangeGrid for (w0, h1)..(w1, h1) with control over both width and height step counts
-impl<F> IntoArangeGrid<(F, F)> for Range<(F, F)>
+impl<F1, F2> IntoArangeGrid<(F1, F2)> for Range<(F1, F2)>
 where
-    F: Float + AddAssign + Sub<Output = F> + Div<Output = F> + ToPrimitive,
-    Arange<F>: Clone,
+    F1: Float + AddAssign + Sub<Output = F1> + Div<Output = F1> + ToPrimitive,
+    F2: Float + AddAssign + Sub<Output = F2> + Div<Output = F2> + ToPrimitive,
+    Arange<F1>: Clone,
+    Arange<F2>: Clone,
 {
-    type ArangeGrid = Product<Arange<F>, Arange<F>>;
-    fn into_arange_grid(self, (w, h): (F, F)) -> Self::ArangeGrid {
+    type ArangeGrid = Grid2<F1, F2>;
+    fn into_arange_grid(self, (w, h): (F1, F2)) -> Self::ArangeGrid {
         let Range {
             start: (w0, h0),
             end: (w1, h1),
         } = self;
 
-        let wl = Arange::new(w0..w1, w);
-        let hl = Arange::new(h0..h1, h);
-        wl.cartesian_product(hl)
+        let first = Arange::new(w0..w1, w);
+        let second = Arange::new(h0..h1, h);
+        first.cartesian_product(second)
     }
 }
 
 // Implements IntoArangeGrid for (w0, h0, d0)..(w1, h1, d1) with control over both width, height and depth step counts
-impl<F> IntoArangeGrid<(F, F, F)> for Range<(F, F, F)>
+impl<F1, F2, F3> IntoArangeGrid<(F1, F2, F3)> for Range<(F1, F2, F3)>
 where
-    F: Float + AddAssign + Sub<Output = F> + Div<Output = F> + ToPrimitive,
-    Arange<F>: Clone,
+    F1: Float + AddAssign + Sub<Output = F1> + Div<Output = F1> + ToPrimitive,
+    F2: Float + AddAssign + Sub<Output = F2> + Div<Output = F2> + ToPrimitive,
+    F3: Float + AddAssign + Sub<Output = F3> + Div<Output = F3> + ToPrimitive,
+    Arange<F1>: Clone,
+    Arange<F2>: Clone,
+    Arange<F3>: Clone,
 {
-    type ArangeGrid = Product<Product<Arange<F>, Arange<F>>, Arange<F>>;
-    fn into_arange_grid(self, (w, h, d): (F, F, F)) -> Self::ArangeGrid {
+    type ArangeGrid = Grid3<F1, F2, F3>;
+    fn into_arange_grid(self, (w, h, d): (F1, F2, F3)) -> Self::ArangeGrid {
         let Range {
             start: (w0, h0, d0),
             end: (w1, h1, d1),
         } = self;
 
-        let wl = Arange::new(w0..w1, w);
-        let hl = Arange::new(h0..h1, h);
-        let dl = Arange::new(d0..d1, d);
-        wl.cartesian_product(hl).cartesian_product(dl)
+        let first = ((w0, h0)..(w1, h1)).into_arange_grid((w, h));
+        let second = Arange::new(d0..d1, d);
+        Combine::new(first.cartesian_product(second))
     }
 }
 
@@ -171,16 +181,9 @@ where
     F: Float + AddAssign + Sub<Output = F> + Div<Output = F> + ToPrimitive,
     Arange<F>: Clone,
 {
-    type ArangeGrid = Product<Arange<F>, Arange<F>>;
+    type ArangeGrid = Grid2<F, F>;
     fn into_arange_grid(self, steps: F) -> Self::ArangeGrid {
-        let Range {
-            start: (w0, h0),
-            end: (w1, h1),
-        } = self;
-
-        let wl = Arange::new(w0..w1, steps);
-        let hl = Arange::new(h0..h1, steps);
-        wl.cartesian_product(hl)
+        self.into_arange_grid((steps, steps))
     }
 }
 
@@ -190,17 +193,9 @@ where
     F: Float + AddAssign + Sub<Output = F> + Div<Output = F> + ToPrimitive,
     Arange<F>: Clone,
 {
-    type ArangeGrid = Product<Product<Arange<F>, Arange<F>>, Arange<F>>;
+    type ArangeGrid = Grid3<F, F, F>;
     fn into_arange_grid(self, steps: F) -> Self::ArangeGrid {
-        let Range {
-            start: (w0, h0, d0),
-            end: (w1, h1, d1),
-        } = self;
-
-        let wl = Arange::new(w0..w1, steps);
-        let hl = Arange::new(h0..h1, steps);
-        let dl = Arange::new(d0..d1, steps);
-        wl.cartesian_product(hl).cartesian_product(dl)
+        self.into_arange_grid((steps, steps, steps))
     }
 }
 

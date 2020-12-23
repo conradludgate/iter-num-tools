@@ -1,4 +1,4 @@
-use crate::{combine::Combine, lerp::LerpIterPrim};
+use crate::lerp::LerpIterPrim;
 use num_traits::FromPrimitive;
 use std::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
 
@@ -31,7 +31,7 @@ pub trait IntoLinSpace<T> {
 
 impl<T> IntoLinSpace<T> for RangeInclusive<T>
 where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
+    T: Linear,
 {
     fn into_lin_space(self, steps: usize) -> LinSpace<T> {
         LinSpace::new(0..=steps - 1, self, 0..steps)
@@ -40,7 +40,7 @@ where
 
 impl<T> IntoLinSpace<T> for Range<T>
 where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
+    T: Linear,
 {
     fn into_lin_space(self, steps: usize) -> LinSpace<T> {
         let Range { start, end } = self;
@@ -48,177 +48,5 @@ where
     }
 }
 
-use itertools::{Itertools, Product};
-/// Creates a linear grid space over range with a fixed number of width and height steps
-///
-/// ```
-/// use iter_num_tools::grid_space;
-/// use itertools::Itertools;
-///
-/// let it = grid_space((0.0, 0.0)..(1.0, 2.0), (2, 4));
-/// itertools::assert_equal(it, vec![
-///     (0.0, 0.0), (0.0, 0.5), (0.0, 1.0), (0.0, 1.5),
-///     (0.5, 0.0), (0.5, 0.5), (0.5, 1.0), (0.5, 1.5),
-/// ]);
-///
-/// // inclusive and with a single step count
-/// let it = grid_space((0.0, 0.0)..=(1.0, 2.0), 3);
-/// itertools::assert_equal(it, vec![
-///     (0.0, 0.0), (0.0, 1.0), (0.0, 2.0),
-///     (0.5, 0.0), (0.5, 1.0), (0.5, 2.0),
-///     (1.0, 0.0), (1.0, 1.0), (1.0, 2.0),
-/// ]);
-///
-/// // even 3d spaces
-/// let it = grid_space((0, 0, 0)..=(1, 1, 1), 2);
-/// itertools::assert_equal(it, vec![
-///     (0, 0, 0), (0, 0, 1),
-///     (0, 1, 0), (0, 1, 1),
-///
-///     (1, 0, 0), (1, 0, 1),
-///     (1, 1, 0), (1, 1, 1),
-/// ]);
-/// ```
-pub fn grid_space<R, S>(range: R, size: S) -> <R as IntoGridSpace<S>>::GridSpace
-where
-    R: IntoGridSpace<S>,
-{
-    range.into_grid_space(size)
-}
-
-pub trait IntoGridSpace<S> {
-    type GridSpace;
-    fn into_grid_space(self, size: S) -> Self::GridSpace;
-}
-
-// Implements IntoGridSpace for (w0, h0)..=(w1, h1) with control over both width and height step counts
-impl<T> IntoGridSpace<(usize, usize)> for RangeInclusive<(T, T)>
-where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
-{
-    type GridSpace = Product<LinSpace<T>, LinSpace<T>>;
-    fn into_grid_space(self, (w, h): (usize, usize)) -> Self::GridSpace {
-        let ((w0, h0), (w1, h1)) = self.into_inner();
-
-        let wl = lin_space(w0..=w1, w);
-        let hl = lin_space(h0..=h1, h);
-        wl.cartesian_product(hl)
-    }
-}
-
-// Implements IntoGridSpace for (w0, h0, d0)..=(w1, h1, d1) with control over both width, height and depth step counts
-impl<T> IntoGridSpace<(usize, usize, usize)> for RangeInclusive<(T, T, T)>
-where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
-{
-    type GridSpace = Combine<Product<Product<LinSpace<T>, LinSpace<T>>, LinSpace<T>>>;
-    fn into_grid_space(self, (w, h, d): (usize, usize, usize)) -> Self::GridSpace {
-        let ((w0, h0, d0), (w1, h1, d1)) = self.into_inner();
-
-        let first = ((w0, h0)..=(w1, h1)).into_grid_space((w, h));
-        let second = lin_space(d0..=d1, d);
-        Combine::new(first.cartesian_product(second))
-    }
-}
-
-// Implements IntoGridSpace for (w0, h1)..(w1, h1) with control over both width and height step counts
-impl<T> IntoGridSpace<(usize, usize)> for Range<(T, T)>
-where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
-{
-    type GridSpace = Product<LinSpace<T>, LinSpace<T>>;
-    fn into_grid_space(self, (w, h): (usize, usize)) -> Self::GridSpace {
-        let Range {
-            start: (w0, h0),
-            end: (w1, h1),
-        } = self;
-
-        let wl = lin_space(w0..w1, w);
-        let hl = lin_space(h0..h1, h);
-        wl.cartesian_product(hl)
-    }
-}
-
-// Implements IntoGridSpace for (w0, h0, d0)..(w1, h1, d1) with control over both width, height and depth step counts
-impl<T> IntoGridSpace<(usize, usize, usize)> for Range<(T, T, T)>
-where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
-{
-    type GridSpace = Combine<Product<Product<LinSpace<T>, LinSpace<T>>, LinSpace<T>>>;
-    fn into_grid_space(self, (w, h, d): (usize, usize, usize)) -> Self::GridSpace {
-        let Range {
-            start: (w0, h0, d0),
-            end: (w1, h1, d1),
-        } = self;
-
-        let first = ((w0, h0)..(w1, h1)).into_grid_space((w, h));
-        let second = lin_space(d0..d1, d);
-        Combine::new(first.cartesian_product(second))
-    }
-}
-
-// Implements IntoGridSpace for (w0, h0)..=(w1, h1) with the same width and height step count
-impl<T> IntoGridSpace<usize> for RangeInclusive<(T, T)>
-where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
-{
-    type GridSpace = Product<LinSpace<T>, LinSpace<T>>;
-    fn into_grid_space(self, steps: usize) -> Self::GridSpace {
-        let ((w0, h0), (w1, h1)) = self.into_inner();
-
-        let wl = lin_space(w0..=w1, steps);
-        let hl = lin_space(h0..=h1, steps);
-        wl.cartesian_product(hl)
-    }
-}
-
-// Implements IntoGridSpace for (w0, h0, d0)..=(w1, h1, d1) with the same width, height and depth step count
-impl<T> IntoGridSpace<usize> for RangeInclusive<(T, T, T)>
-where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
-{
-    type GridSpace = Combine<Product<Product<LinSpace<T>, LinSpace<T>>, LinSpace<T>>>;
-    fn into_grid_space(self, steps: usize) -> Self::GridSpace {
-        let ((w0, h0, d0), (w1, h1, d1)) = self.into_inner();
-
-        let first = ((w0, h0)..=(w1, h1)).into_grid_space(steps);
-        let second = lin_space(d0..=d1, steps);
-        Combine::new(first.cartesian_product(second))
-    }
-}
-
-// Implements IntoGridSpace for (w0, h0)..(w1, h1) with the same width and height step count
-impl<T> IntoGridSpace<usize> for Range<(T, T)>
-where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
-{
-    type GridSpace = Product<LinSpace<T>, LinSpace<T>>;
-    fn into_grid_space(self, steps: usize) -> Self::GridSpace {
-        let Range {
-            start: (w0, h0),
-            end: (w1, h1),
-        } = self;
-
-        let wl = lin_space(w0..w1, steps);
-        let hl = lin_space(h0..h1, steps);
-        wl.cartesian_product(hl)
-    }
-}
-
-// Implements IntoGridSpace for (w0, h0, d0)..(w1, h1, d1) with the same width, height and depth step count
-impl<T> IntoGridSpace<usize> for Range<(T, T, T)>
-where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
-{
-    type GridSpace = Combine<Product<Product<LinSpace<T>, LinSpace<T>>, LinSpace<T>>>;
-    fn into_grid_space(self, steps: usize) -> Self::GridSpace {
-        let Range {
-            start: (w0, h0, d0),
-            end: (w1, h1, d1),
-        } = self;
-
-        let first = ((w0, h0)..(w1, h1)).into_grid_space(steps);
-        let second = lin_space(d0..d1, steps);
-        Combine::new(first.cartesian_product(second))
-    }
-}
+pub trait Linear: FromPrimitive + Mul<Output = Self> + Sub<Output = Self> + Add<Output = Self> + Div<Output = Self> + Copy {}
+impl<T> Linear for T where T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy {}
