@@ -1,4 +1,4 @@
-use crate::lerp::LerpIterPrim;
+use crate::{combine::Combine, lerp::LerpIterPrim};
 use num_traits::FromPrimitive;
 use std::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
 
@@ -70,13 +70,13 @@ use itertools::{Itertools, Product};
 /// ]);
 ///
 /// // even 3d spaces
-/// let it = grid_space((0, 0, 0)..=(1, 1, 1), (2, 2, 2));
+/// let it = grid_space((0, 0, 0)..=(1, 1, 1), 2);
 /// itertools::assert_equal(it, vec![
-///     ((0, 0), 0), ((0, 0), 1),
-///     ((0, 1), 0), ((0, 1), 1),
+///     (0, 0, 0), (0, 0, 1),
+///     (0, 1, 0), (0, 1, 1),
 ///
-///     ((1, 0), 0), ((1, 0), 1),
-///     ((1, 1), 0), ((1, 1), 1),
+///     (1, 0, 0), (1, 0, 1),
+///     (1, 1, 0), (1, 1, 1),
 /// ]);
 /// ```
 pub fn grid_space<R, S>(range: R, size: S) -> <R as IntoGridSpace<S>>::GridSpace
@@ -111,14 +111,13 @@ impl<T> IntoGridSpace<(usize, usize, usize)> for RangeInclusive<(T, T, T)>
 where
     T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
 {
-    type GridSpace = Product<Product<LinSpace<T>, LinSpace<T>>, LinSpace<T>>;
+    type GridSpace = Combine<Product<Product<LinSpace<T>, LinSpace<T>>, LinSpace<T>>>;
     fn into_grid_space(self, (w, h, d): (usize, usize, usize)) -> Self::GridSpace {
         let ((w0, h0, d0), (w1, h1, d1)) = self.into_inner();
 
-        let wl = lin_space(w0..=w1, w);
-        let hl = lin_space(h0..=h1, h);
-        let dl = lin_space(d0..=d1, d);
-        wl.cartesian_product(hl).cartesian_product(dl)
+        let first = ((w0, h0)..=(w1, h1)).into_grid_space((w, h));
+        let second = lin_space(d0..=d1, d);
+        Combine::new(first.cartesian_product(second))
     }
 }
 
@@ -145,17 +144,16 @@ impl<T> IntoGridSpace<(usize, usize, usize)> for Range<(T, T, T)>
 where
     T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
 {
-    type GridSpace = Product<Product<LinSpace<T>, LinSpace<T>>, LinSpace<T>>;
+    type GridSpace = Combine<Product<Product<LinSpace<T>, LinSpace<T>>, LinSpace<T>>>;
     fn into_grid_space(self, (w, h, d): (usize, usize, usize)) -> Self::GridSpace {
         let Range {
             start: (w0, h0, d0),
             end: (w1, h1, d1),
         } = self;
 
-        let wl = lin_space(w0..w1, w);
-        let hl = lin_space(h0..h1, h);
-        let dl = lin_space(d0..d1, d);
-        wl.cartesian_product(hl).cartesian_product(dl)
+        let first = ((w0, h0)..(w1, h1)).into_grid_space((w, h));
+        let second = lin_space(d0..d1, d);
+        Combine::new(first.cartesian_product(second))
     }
 }
 
@@ -179,14 +177,13 @@ impl<T> IntoGridSpace<usize> for RangeInclusive<(T, T, T)>
 where
     T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
 {
-    type GridSpace = Product<Product<LinSpace<T>, LinSpace<T>>, LinSpace<T>>;
+    type GridSpace = Combine<Product<Product<LinSpace<T>, LinSpace<T>>, LinSpace<T>>>;
     fn into_grid_space(self, steps: usize) -> Self::GridSpace {
         let ((w0, h0, d0), (w1, h1, d1)) = self.into_inner();
 
-        let wl = lin_space(w0..=w1, steps);
-        let hl = lin_space(h0..=h1, steps);
-        let dl = lin_space(d0..=d1, steps);
-        wl.cartesian_product(hl).cartesian_product(dl)
+        let first = ((w0, h0)..=(w1, h1)).into_grid_space(steps);
+        let second = lin_space(d0..=d1, steps);
+        Combine::new(first.cartesian_product(second))
     }
 }
 
@@ -213,16 +210,15 @@ impl<T> IntoGridSpace<usize> for Range<(T, T, T)>
 where
     T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy,
 {
-    type GridSpace = Product<Product<LinSpace<T>, LinSpace<T>>, LinSpace<T>>;
+    type GridSpace = Combine<Product<Product<LinSpace<T>, LinSpace<T>>, LinSpace<T>>>;
     fn into_grid_space(self, steps: usize) -> Self::GridSpace {
         let Range {
             start: (w0, h0, d0),
             end: (w1, h1, d1),
         } = self;
 
-        let wl = lin_space(w0..w1, steps);
-        let hl = lin_space(h0..h1, steps);
-        let dl = lin_space(d0..d1, steps);
-        wl.cartesian_product(hl).cartesian_product(dl)
+        let first = ((w0, h0)..(w1, h1)).into_grid_space(steps);
+        let second = lin_space(d0..d1, steps);
+        Combine::new(first.cartesian_product(second))
     }
 }

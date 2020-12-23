@@ -1,6 +1,7 @@
 mod arange;
 pub mod lerp;
 mod linspace;
+pub mod combine;
 
 use std::ops::Range;
 
