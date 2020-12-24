@@ -1,8 +1,8 @@
-use crate::lerp::LerpIterPrim;
+use crate::{lerp::LerpPrim, map::Map};
 use num_traits::FromPrimitive;
 use std::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
 
-pub type LinSpace<T> = LerpIterPrim<T, Range<usize>, usize>;
+pub type LinSpace<T> = Map<Range<usize>, LerpPrim<T>>;
 
 /// Creates a linear space over range with a fixed number of steps
 ///
@@ -34,7 +34,7 @@ where
     T: Linear,
 {
     fn into_lin_space(self, steps: usize) -> LinSpace<T> {
-        LinSpace::new(0..=steps - 1, self, 0..steps)
+        LinSpace::new(0..steps, LerpPrim::new_usize(0..=steps - 1, self))
     }
 }
 
@@ -44,7 +44,7 @@ where
 {
     fn into_lin_space(self, steps: usize) -> LinSpace<T> {
         let Range { start, end } = self;
-        LinSpace::new(0..=steps, start..=end, 0..steps)
+        LinSpace::new(0..steps, LerpPrim::new_usize(0..=steps, start..=end))
     }
 }
 

@@ -1,7 +1,7 @@
 use num_traits::{real::Real};
 use std::ops::{Range, RangeInclusive};
 
-use crate::{LinSpace, Linear, lin_space};
+use crate::{LinSpace, Linear, lin_space, map::{Map, Function}};
 
 /// Creates a logarithmic space over range with a fixed number of steps
 ///
@@ -40,7 +40,7 @@ where
 {
     fn into_log_space(self, steps: usize) -> LogSpace<T> {
         let (a, b) = self.into_inner();
-        LogSpace::new(lin_space(a.ln()..=b.ln(), steps))
+        Map::new(lin_space(a.ln()..=b.ln(), steps), Exp)
     }
 }
 
@@ -50,26 +50,19 @@ where
 {
     fn into_log_space(self, steps: usize) -> LogSpace<T> {
         let Range { start: a, end: b } = self;
-        LogSpace::new(lin_space(a.ln()..b.ln(), steps))
+        Map::new(lin_space(a.ln()..b.ln(), steps), Exp)
     }
 }
 
-pub struct LogSpace<T>(LinSpace<T>);
+pub struct Exp;
 
-impl<T> LogSpace<T> {
-    fn new(linspace: LinSpace<T>) -> Self {
-        LogSpace(linspace)
+impl<T> Function<T> for Exp where T: Real {
+    type Output = T;
+
+    #[inline]
+    fn call(&self, x: T) -> Self::Output {
+        x.exp()
     }
 }
 
-impl<T> Iterator for LogSpace<T>
-where
-    LinSpace<T>: Iterator<Item = T>,
-    T: Real,
-{
-    type Item = T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(<T as Real>::exp)
-    }
-}
+pub type LogSpace<T> = Map<LinSpace<T>, Exp>;

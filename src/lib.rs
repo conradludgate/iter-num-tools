@@ -6,6 +6,7 @@ pub mod combine;
 mod gridspace;
 pub mod grid;
 mod logspace;
+pub mod map;
 
 use std::ops::Range;
 
