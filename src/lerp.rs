@@ -9,9 +9,7 @@ pub struct Lerp<T> {
     y1: T,
 }
 
-impl<T> Lerp<T>
-where
-{
+impl<T> Lerp<T> {
     pub fn new(from: RangeInclusive<T>, to: RangeInclusive<T>) -> Self {
         let (x0, x1) = from.into_inner();
         let (y0, y1) = to.into_inner();

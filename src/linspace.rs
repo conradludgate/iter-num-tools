@@ -48,5 +48,16 @@ where
     }
 }
 
-pub trait Linear: FromPrimitive + Mul<Output = Self> + Sub<Output = Self> + Add<Output = Self> + Div<Output = Self> + Copy {}
-impl<T> Linear for T where T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy {}
+pub trait Linear:
+    FromPrimitive
+    + Mul<Output = Self>
+    + Sub<Output = Self>
+    + Add<Output = Self>
+    + Div<Output = Self>
+    + Copy
+{
+}
+impl<T> Linear for T where
+    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy
+{
+}
