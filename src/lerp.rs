@@ -1,7 +1,12 @@
+//! Lerp implements a linear interpolation function.
+//!
+//! Used by [LinSpace](crate::lin_space).
+
 use num_traits::FromPrimitive;
 use std::ops::{Add, Div, Mul, RangeInclusive, Sub};
 use crate::map::Function;
 
+/// Lerp represents the range over the linear interpolation
 #[derive(Copy, Clone)]
 pub struct Lerp<T> {
     x0: T,
@@ -11,6 +16,7 @@ pub struct Lerp<T> {
 }
 
 impl<T> Lerp<T> {
+    /// Create a new linear interpolator over the provided ranges
     pub fn new(from: RangeInclusive<T>, to: RangeInclusive<T>) -> Self {
         let (x0, x1) = from.into_inner();
         let (y0, y1) = to.into_inner();
@@ -22,6 +28,7 @@ impl<T> Lerp<T>
 where
     T: Mul<Output = T> + Add<Output = T> + Sub<Output = T> + Div<Output = T> + Copy,
 {
+    /// Perform a linear interpolation
     #[inline]
     fn lerp(&self, x: T) -> T {
         let Lerp { x0, x1, y0, y1 } = *self;

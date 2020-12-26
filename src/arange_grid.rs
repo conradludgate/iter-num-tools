@@ -1,8 +1,10 @@
 use crate::{
+    arange,
     grid::{grid, Grid2, Grid3, Grid4, Transpose},
-    Arange, CanArange,
+    IntoLinSpace, LinSpace,
 };
-use std::ops::Range;
+use num_traits::{real::Real, FromPrimitive, ToPrimitive};
+use std::ops::{Div, Range, Sub};
 
 /// Creates a grid space over the range made up of fixed step intervals
 ///
@@ -48,13 +50,18 @@ pub trait IntoArangeGrid<S> {
 macro_rules! impl_arange_grid {
     ($Grid:ident: $($f:ident: $r:ident;$s:ident),*) => {
 
-impl<$($f),*> IntoArangeGrid<($($f),*)> for Range<($($f),*)> where $($f: CanArange),* {
-    type ArangeGrid = $Grid<$(Arange<$f>),*>;
+impl<$($f),*> IntoArangeGrid<($($f),*)> for Range<($($f),*)>
+where $(
+    $f: Real + Sub<Output = $f> + Div<Output = $f> + ToPrimitive + FromPrimitive,
+    Range<$f>: IntoLinSpace<$f>,
+)*
+{
+    type ArangeGrid = $Grid<$(LinSpace<$f>),*>;
 
     fn into_arange_grid(self, ($($s),*): ($($f),*)) -> Self::ArangeGrid {
         let ($($r),*) = self.transpose();
         grid(($(
-            Arange::new($r, $s),
+            arange($r, $s),
         )*))
     }
 }
@@ -69,8 +76,12 @@ impl_arange_grid!(Grid4: F0: r0;s0, F1: r1;s1, F2: r2;s2, F3: r3;s3); // 4d grid
 macro_rules! impl_arange_grid_simple {
     ($Grid:ident;$F:ident: $($f:ident;$s:ident),*) => {
 
-impl<$F> IntoArangeGrid<$F> for Range<($($f),*)> where $F: CanArange {
-    type ArangeGrid = $Grid<$(Arange<$f>),*>;
+impl<$F> IntoArangeGrid<$F> for Range<($($f),*)>
+where
+    $F: Real + Sub<Output = $F> + Div<Output = $F> + ToPrimitive + FromPrimitive,
+    Range<$F>: IntoLinSpace<$F>,
+{
+    type ArangeGrid = $Grid<$(LinSpace<$f>),*>;
 
     fn into_arange_grid(self, s: $F) -> Self::ArangeGrid {
         $( let $s = s; )*

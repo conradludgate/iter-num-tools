@@ -1,3 +1,6 @@
+//! Provides a generic Map iterator that is similar but easier to create type signatures for than [Map](std::iter::Map).
+
+/// Function is a generic trait for a Fn(T)->O
 pub trait Function<T> {
     type Output;
     fn call(&self, x: T) -> Self::Output;
@@ -16,7 +19,7 @@ where
 }
 
 #[derive(Clone, Copy)]
-/// Works a lot like std::map::Map
+/// Works a lot like [Map](std::iter::Map)
 /// but accepts a non Fn(T)->O type,
 /// Instead, opting to use the trait [Function]
 /// for the mapping function. This makes creating types

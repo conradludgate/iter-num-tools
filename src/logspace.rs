@@ -54,6 +54,7 @@ where
     }
 }
 
+/// Implements [Function](crate::map::Function) to perform [exp](num_traits::real::Real::exp())
 pub struct Exp;
 
 impl<T> Function<T> for Exp where T: Real {

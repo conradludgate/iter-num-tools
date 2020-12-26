@@ -1,8 +1,11 @@
+//! Some convenient traits and functions for process grid based iterators
+
 use crate::combine::Combine;
 use itertools::Product;
 mod tuple;
 mod transpose;
 
+/// Create a grid over a tuple of iterators
 pub fn grid<G: IntoGrid>(g: G) -> G::Grid {
     g.into_grid()
 }

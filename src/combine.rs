@@ -1,3 +1,6 @@
+//! Combines iterators over `((A, B), C)` items into `(A, B, C)`.
+//! Used by [Grid](crate::grid)
+
 pub struct Combine<I>(I);
 
 impl<I> Combine<I> {
