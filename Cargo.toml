@@ -1,9 +1,9 @@
 [package]
 name = "iter_num_tools"
-version = "0.1.17"
+version = "0.2.0"
 authors = ["Conrad Ludgate <conradludgate@gmail.com>"]
 edition = "2018"
-description = "A collection of convenient tools that I always have to remake when working with num/iterators"
+description = "Create simple iterators over non integer ranges. itertools + num = iter_num_tools"
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/conradludgate/iter-num-tools"
@@ -14,4 +14,4 @@ categories = ["algorithms", "rust-patterns"]
 
 [dependencies]
 num-traits = "0.2"
-itertools = "0.9"
+itertools = "0.10"
