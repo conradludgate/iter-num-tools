@@ -49,6 +49,8 @@ where
     }
 }
 
+/// Much like [Lerp], except provides [Function](crate::map::Function)
+/// implementations over built in number primitives
 #[derive(Copy, Clone)]
 pub struct LerpPrim<T>(Lerp<T>);
 

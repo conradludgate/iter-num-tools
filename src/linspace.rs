@@ -2,6 +2,7 @@ use crate::{lerp::LerpPrim, map::Map};
 use num_traits::FromPrimitive;
 use std::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
 
+/// Iterator over a linear number space
 pub type LinSpace<T> = Map<Range<usize>, LerpPrim<T>>;
 
 /// Creates a linear space over range with a fixed number of steps
@@ -25,6 +26,7 @@ where
     range.into_lin_space(steps)
 }
 
+/// Used by [lin_space]
 pub trait IntoLinSpace<T> {
     fn into_lin_space(self, steps: usize) -> LinSpace<T>;
 }
@@ -48,6 +50,7 @@ where
     }
 }
 
+/// Trait required for [lin_space] implementations.
 pub trait Linear:
     FromPrimitive
     + Mul<Output = Self>

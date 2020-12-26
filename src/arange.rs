@@ -25,7 +25,6 @@ where
     lin_space(a..b, len)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

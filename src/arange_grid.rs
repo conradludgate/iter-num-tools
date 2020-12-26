@@ -42,6 +42,7 @@ where
     range.into_arange_grid(size)
 }
 
+/// Used by [arange_grid]
 pub trait IntoArangeGrid<S> {
     type ArangeGrid;
     fn into_arange_grid(self, size: S) -> Self::ArangeGrid;

@@ -35,6 +35,7 @@ where
     range.into_grid_space(size)
 }
 
+/// Used by [grid_space]
 pub trait IntoGridSpace<S> {
     type GridSpace;
     fn into_grid_space(self, size: S) -> Self::GridSpace;

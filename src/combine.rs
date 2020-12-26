@@ -3,8 +3,10 @@
 
 use crate::map::{Map, Function};
 
+/// Iterator over combined tuples
 pub type Combine<I> = Map<I, CombineFn>;
 
+/// Converts an iterator over nested tuples into an iterator over a single tuple
 pub fn combine<I>(iter: I) -> Combine<<I as IntoIterator>::IntoIter>
 where
     I: IntoIterator,
@@ -12,8 +14,10 @@ where
     Map::new(iter, CombineFn)
 }
 
+/// Combines nested tuples into a single tuple
 pub struct CombineFn;
 
+/// Converts ((A, B), C) into (A, B, C)
 impl<A, B, C> Function<((A, B), C)> for CombineFn {
     type Output = (A, B, C);
     #[inline]
@@ -22,6 +26,7 @@ impl<A, B, C> Function<((A, B), C)> for CombineFn {
     }
 }
 
+/// Converts ((A, B, C), D) into (A, B, C, D)
 impl<A, B, C, D> Function<((A, B, C), D)> for CombineFn {
     type Output = (A, B, C, D);
     #[inline]

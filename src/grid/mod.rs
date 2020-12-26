@@ -10,15 +10,21 @@ pub fn grid<G: IntoGrid>(g: G) -> G::Grid {
     g.into_grid()
 }
 
+/// Trait used by [grid]
 pub trait IntoGrid {
     type Grid;
     fn into_grid(self) -> Self::Grid;
 }
 
+/// 2D Grid Iterator
 pub type Grid2<I1, I2> = Product<I1, I2>;
+/// 3D Grid Iterator
 pub type Grid3<I1, I2, I3> = Combine<Product<Grid2<I1, I2>, I3>>;
+/// 4D Grid Iterator
 pub type Grid4<I1, I2, I3, I4> = Combine<Product<Grid3<I1, I2, I3>, I4>>;
 
+/// Trait for Transpose
+/// Used by [Range](std::ops::Range) to convert `Range<(A, B)>` into `(Range<A>, Range<B>)` for example
 pub trait Transpose {
     type Output;
     fn transpose(self) -> Self::Output;

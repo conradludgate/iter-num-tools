@@ -30,6 +30,7 @@ where
     range.into_log_space(steps)
 }
 
+/// Used by [log_space]
 pub trait IntoLogSpace<T> {
     fn into_log_space(self, steps: usize) -> LogSpace<T>;
 }
@@ -66,6 +67,7 @@ impl<T> Function<T> for Exp where T: Real {
     }
 }
 
+/// Iterator over a logarithmic number space
 pub type LogSpace<T> = Map<LinSpace<T>, Exp>;
 
 #[cfg(test)]
