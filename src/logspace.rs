@@ -41,7 +41,7 @@ where
 {
     fn into_log_space(self, steps: usize) -> LogSpace<T> {
         let (a, b) = self.into_inner();
-        Map::new(lin_space(a.ln()..=b.ln(), steps), Exp)
+        Map::new(lin_space(a.log2()..=b.log2(), steps), Exp2)
     }
 }
 
@@ -51,24 +51,24 @@ where
 {
     fn into_log_space(self, steps: usize) -> LogSpace<T> {
         let Range { start: a, end: b } = self;
-        Map::new(lin_space(a.ln()..b.ln(), steps), Exp)
+        Map::new(lin_space(a.log2()..b.log2(), steps), Exp2)
     }
 }
 
-/// Implements [Function](crate::map::Function) to perform [exp](num_traits::real::Real::exp())
-pub struct Exp;
+/// Implements [Function](crate::map::Function) to perform [exp2](num_traits::real::Real::exp2())
+pub struct Exp2;
 
-impl<T> Function<T> for Exp where T: Real {
+impl<T> Function<T> for Exp2 where T: Real {
     type Output = T;
 
     #[inline]
     fn call(&self, x: T) -> Self::Output {
-        x.exp()
+        x.exp2()
     }
 }
 
 /// Iterator over a logarithmic number space
-pub type LogSpace<T> = Map<LinSpace<T>, Exp>;
+pub type LogSpace<T> = Map<LinSpace<T>, Exp2>;
 
 #[cfg(test)]
 mod tests {

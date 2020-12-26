@@ -10,11 +10,7 @@
 [docs.rs]: https://docs.rs/iter_num_tools
 [codecov]: https://codecov.io/gh/conradludgate/iter-num-tools
 
-
-This is a collection if iterator extensions that
-make heavy use of number properties.
-Mostly extending on [Range](std::ops::Range).
-The most useful features are making range iterators over floats.
+This is a collection if iterator extensions that make heavy use of number properties. Mostly extending on [Range](std::ops::Range).
 
 ## LinSpace
 
@@ -61,8 +57,7 @@ assert!(it.eq(vec![
 
 ## Arange
 
-Arange is similar to [LinSpace](#linspace), but instead of a fixed amount or steps,
-it steps but a fixed amount.
+Arange is similar to [LinSpace](#linspace), but instead of a fixed amount of steps, it steps by a fixed amount.
 
 ```rust
 use iter_num_tools::arange;
@@ -71,7 +66,17 @@ let it = arange(0.0..2.0, 0.5);
 assert!(it.eq(vec![0.0, 0.5, 1.0, 1.5]));
 ```
 
-Note, there is no inclusive version of arange
+#### Note
+
+There is no inclusive version of arange. Consider the following
+
+```rust
+use iter_num_tools::arange;
+
+let it = arange(0.0..=2.1, 0.5);
+```
+
+We would not expect 2.1 to ever be a value that the iterator will ever meet, but the range suggests it should be included. Therefore, no [RangeInclusive](std::ops::RangeInclusive) implementation is provided.
 
 ## ArangeGrid
 

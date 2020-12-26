@@ -1,8 +1,6 @@
 //! iter_num_tools is a collection if iterator extensions that
 //! make heavy use of number properties.
 //! Mostly extending on [Range](std::ops::Range).
-//! The most useful features are making range iterators over floats.
-//!
 //!
 //! ## LinSpace
 //! [LinSpace](lin_space) is an iterator over a range with a fixed number of values all evenly spaced.
@@ -47,8 +45,8 @@
 //! ```
 //!
 //! ## Arange
-//! [Arange](arange()) is similar to [LinSpace](#linspace), but instead of a fixed amount or steps,
-//! it steps but a fixed amount.
+//! [Arange](arange()) is similar to [LinSpace](#linspace), but instead of a fixed amount of steps,
+//! it steps by a fixed amount.
 //!
 //! ```
 //! use iter_num_tools::arange;
@@ -57,7 +55,15 @@
 //! assert!(it.eq(vec![0.0, 0.5, 1.0, 1.5]));
 //! ```
 //!
-//! Note, there is no inclusive version of arange
+//! #### Note
+//! There is no inclusive version of arange. Consider the following
+//! ```compile_fail
+//! use iter_num_tools::arange;
+//!
+//! let it = arange(0.0..=2.1, 0.5);
+//! ```
+//! We would not expect 2.1 to ever be a value that the iterator will ever meet, but the range suggests it should be included.
+//! Therefore, no [RangeInclusive](std::ops::RangeInclusive) implementation is provided.
 //!
 //! ## ArangeGrid
 //! [ArangeGrid](arange_grid()) is the same as [GridSpace](#gridspace) but for [Arange](#arange) instead of [LinSpace](#linspace).
@@ -65,7 +71,6 @@
 //!
 //! ```
 //! use iter_num_tools::arange_grid;
-//! use itertools::Itertools;
 //!
 //! // count in 2 dimensions,
 //! // from 0.0 up to 1.0 in the x direction,
@@ -98,13 +103,13 @@
 //! let it = log_space(1.0..=1000.0, 4);
 //! let expected: Vec<f64> = vec![1.0, 10.0, 100.0, 1000.0];
 //!
-//! assert!(it.zip(expected).all(|(x, y)| (x-y).abs() < 1e-10));
+//! assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 //!
 //! // From 1.0 up to 1000.0, taking 3 logarithmic steps
 //! let it = log_space(1.0..1000.0, 3);
 //! let expected: Vec<f64> = vec![1.0, 10.0, 100.0];
 //!
-//! assert!(it.zip(expected).all(|(x, y)| (x-y).abs() < 1e-10));
+//! assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 //! ```
 
 pub mod combine;
