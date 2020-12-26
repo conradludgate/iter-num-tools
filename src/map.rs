@@ -29,7 +29,10 @@ pub struct Map<I, F> {
     f: F,
 }
 
-impl<I, F> Map<I, F> {
+impl<I, F> Map<I, F>
+where
+    I: Iterator,
+{
     pub fn new(i: impl IntoIterator<IntoIter = I>, f: F) -> Self {
         Map {
             i: i.into_iter(),
@@ -80,19 +83,19 @@ mod tests {
 
     #[test]
     fn test_iter() {
-        let c: Vec<_> = Map::new(0..5, |x| 2*x).collect();
+        let c: Vec<_> = Map::new(0..5, |x| 2 * x).collect();
         assert_eq!(c, vec![0, 2, 4, 6, 8]);
     }
 
     #[test]
     fn test_count() {
-        let it = Map::new(0..5, |x| 2*x);
+        let it = Map::new(0..5, |x| 2 * x);
         assert_eq!(it.count(), 5);
     }
 
     #[test]
     fn test_last() {
-        let it = Map::new(0..5, |x| 2*x);
+        let it = Map::new(0..5, |x| 2 * x);
         assert_eq!(it.last(), Some(8));
     }
 }

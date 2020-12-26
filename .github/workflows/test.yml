@@ -2,20 +2,20 @@ name: test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   test:
-    name:      test
-    runs-on:   ubuntu-latest
+    name: test
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      
+
       - name: Run tests
-        run:  cargo test --verbose
+        run: cargo test --verbose
