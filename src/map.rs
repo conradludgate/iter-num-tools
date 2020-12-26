@@ -33,7 +33,7 @@ impl<I, F> Map<I, F>
 where
     I: Iterator,
 {
-    pub fn new(i: impl IntoIterator<IntoIter = I>, f: F) -> Self {
+    pub fn new(i: impl IntoIterator<Item = I::Item, IntoIter = I>, f: F) -> Self {
         Map {
             i: i.into_iter(),
             f,

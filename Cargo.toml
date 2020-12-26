@@ -7,7 +7,8 @@ description = "A collection of convenient tools that I always have to remake whe
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/conradludgate/iter-num-tools"
-tags = ["numerics", "mathematics", "iterator"]
+keywords = ["numerics", "mathematics", "iterator"]
+categories = ["algorithms", "rust-patterns"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
