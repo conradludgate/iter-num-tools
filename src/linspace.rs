@@ -61,3 +61,20 @@ impl<T> Linear for T where
     T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy
 {
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_lin_space_inclusive() {
+        let it = lin_space(1.0..=5.0, 5);
+        assert!(it.eq(vec![1.0, 2.0, 3.0, 4.0, 5.0]));
+    }
+
+    #[test]
+    fn test_lin_space_exclusive() {
+        let it = lin_space(0.0..5.0, 5);
+        assert!(it.eq(vec![0.0, 1.0, 2.0, 3.0, 4.0]));
+    }
+}

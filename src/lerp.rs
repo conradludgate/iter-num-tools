@@ -110,3 +110,24 @@ LerpPrimitive![
     new_f32; f32; from_f32,
     new_f64; f64; from_f64
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn lerp() {
+        let lerp = Lerp::new(0.0..=1.0, 10.0..=20.0);
+        assert_eq!(lerp.call(0.5), 15.0);
+        assert_eq!(lerp.call(1.5), 25.0);
+        assert_eq!(lerp.call(-0.5), 5.0);
+    }
+
+    #[test]
+    fn lerp_usize() {
+        let lerp = LerpPrim::new_usize(0..=10, 10.0..=20.0);
+        assert_eq!(lerp.call(5), 15.0);
+        assert_eq!(lerp.call(10), 20.0);
+        assert_eq!(lerp.call(15), 25.0);
+    }
+}

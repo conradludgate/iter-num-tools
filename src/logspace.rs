@@ -67,3 +67,25 @@ impl<T> Function<T> for Exp where T: Real {
 }
 
 pub type LogSpace<T> = Map<LinSpace<T>, Exp>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use itertools::zip_eq;
+
+    #[test]
+    fn test_log_space_inclusive() {
+        let it = log_space(1.0..=1000.0, 4);
+        let expected: Vec<f64> = vec![1.0, 10.0, 100.0, 1000.0];
+
+        assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
+    }
+
+    #[test]
+    fn test_log_space_exclusive() {
+        let it = log_space(1.0..1000.0, 3);
+        let expected: Vec<f64> = vec![1.0, 10.0, 100.0];
+
+        assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
+    }
+}

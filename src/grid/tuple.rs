@@ -1,5 +1,5 @@
 use super::{Grid2, Grid3, Grid4, IntoGrid};
-use crate::combine::Combine;
+use crate::combine::combine;
 use itertools::Itertools;
 
 impl<I1, I2> IntoGrid for (I1, I2)
@@ -24,7 +24,7 @@ where
 {
     type Grid = Grid3<I1, I2, I3>;
     fn into_grid(self) -> Self::Grid {
-        Combine::new((self.0, self.1).into_grid().cartesian_product(self.2))
+        combine((self.0, self.1).into_grid().cartesian_product(self.2))
     }
 }
 
@@ -40,9 +40,8 @@ where
 {
     type Grid = Grid4<I1, I2, I3, I4>;
     fn into_grid(self) -> Self::Grid {
-        Combine::new(
-            (self.0, self.1, self.2)
-                .into_grid()
+        combine(
+            combine((self.0, self.1).into_grid().cartesian_product(self.2))
                 .cartesian_product(self.3),
         )
     }

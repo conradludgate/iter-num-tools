@@ -1,10 +1,13 @@
 [package]
 name = "iter_num_tools"
-version = "0.1.14"
+version = "0.1.15"
 authors = ["Conrad Ludgate <conradludgate@gmail.com>"]
 edition = "2018"
 description = "A collection of convenient tools that I always have to remake when working with num/iterators"
 license = "MIT"
+readme = "README.md"
+repository = "https://github.com/conradludgate/iter-num-tools"
+tags = ["numerics", "mathematics", "iterator"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -71,3 +71,28 @@ where
         Some(self.f.call(self.i.last()?))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::assert_eq;
+
+    use super::*;
+
+    #[test]
+    fn test_iter() {
+        let c: Vec<_> = Map::new(0..5, |x| 2*x).collect();
+        assert_eq!(c, vec![0, 2, 4, 6, 8]);
+    }
+
+    #[test]
+    fn test_count() {
+        let it = Map::new(0..5, |x| 2*x);
+        assert_eq!(it.count(), 5);
+    }
+
+    #[test]
+    fn test_last() {
+        let it = Map::new(0..5, |x| 2*x);
+        assert_eq!(it.last(), Some(8));
+    }
+}
