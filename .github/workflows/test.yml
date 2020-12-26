@@ -11,7 +11,7 @@ env:
 
 jobs:
   test:
-    name:      coverage
+    name:      test
     runs-on:   ubuntu-latest
     steps:
       - name: Checkout repository
