@@ -15,6 +15,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-coverage
+
       - name: Install tarpaulin
         run: cargo install cargo-tarpaulin
 

@@ -17,5 +17,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-test
+
       - name: Run tests
         run: cargo test --verbose
