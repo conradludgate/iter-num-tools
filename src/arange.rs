@@ -1,6 +1,6 @@
 use crate::{lin_space, IntoLinSpace, LinSpace};
 use num_traits::{real::Real, ToPrimitive};
-use std::ops::{Div, Range, Sub};
+use core::ops::{Div, Range, Sub};
 
 /// Create a new iterator over the range, stepping by `step` each time
 /// This allows you to create simple float iterators
@@ -32,6 +32,6 @@ mod tests {
     #[test]
     fn test_arange() {
         let it = arange(0.0..2.0, 0.5);
-        assert!(it.eq(vec![0.0, 0.5, 1.0, 1.5]));
+        assert_eq_iter!(it, [0.0, 0.5, 1.0, 1.5]);
     }
 }

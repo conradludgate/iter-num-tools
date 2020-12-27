@@ -2,8 +2,8 @@
 
 use crate::combine::Combine;
 use itertools::Product;
-mod tuple;
 mod transpose;
+mod tuple;
 
 /// Create a grid over a tuple of iterators
 pub fn grid<G: IntoGrid>(g: G) -> G::Grid {
@@ -36,65 +36,54 @@ mod tests {
 
     #[test]
     fn test_grid2() {
-        let it = grid((
-            vec![0, 1].into_iter(),
-            vec![2, 3].into_iter(),
-        ));
+        let it = grid((0..2, 2..4));
 
-        assert!(it.eq(vec![
-            (0, 2),
-            (0, 3),
-            (1, 2),
-            (1, 3),
-        ]));
+        assert_eq_iter!(it, [(0, 2), (0, 3), (1, 2), (1, 3)]);
     }
 
     #[test]
     fn test_grid3() {
-        let it = grid((
-            vec![0, 1].into_iter(),
-            vec![2, 3].into_iter(),
-            vec![4, 5].into_iter(),
-        ));
+        let it = grid((0..2, 2..4, 4..6));
 
-        assert!(it.eq(vec![
-            (0, 2, 4),
-            (0, 2, 5),
-            (0, 3, 4),
-            (0, 3, 5),
-            (1, 2, 4),
-            (1, 2, 5),
-            (1, 3, 4),
-            (1, 3, 5),
-        ]));
+        assert_eq_iter!(
+            it,
+            [
+                (0, 2, 4),
+                (0, 2, 5),
+                (0, 3, 4),
+                (0, 3, 5),
+                (1, 2, 4),
+                (1, 2, 5),
+                (1, 3, 4),
+                (1, 3, 5)
+            ]
+        );
     }
 
     #[test]
     fn test_grid4() {
-        let it = grid((
-            vec![0, 1].into_iter(),
-            vec![2, 3].into_iter(),
-            vec![4, 5].into_iter(),
-            vec![6, 7].into_iter(),
-        ));
+        let it = grid((0..2, 2..4, 4..6, 6..8));
 
-        assert!(it.eq(vec![
-            (0, 2, 4, 6),
-            (0, 2, 4, 7),
-            (0, 2, 5, 6),
-            (0, 2, 5, 7),
-            (0, 3, 4, 6),
-            (0, 3, 4, 7),
-            (0, 3, 5, 6),
-            (0, 3, 5, 7),
-            (1, 2, 4, 6),
-            (1, 2, 4, 7),
-            (1, 2, 5, 6),
-            (1, 2, 5, 7),
-            (1, 3, 4, 6),
-            (1, 3, 4, 7),
-            (1, 3, 5, 6),
-            (1, 3, 5, 7),
-        ]));
+        assert_eq_iter!(
+            it,
+            [
+                (0, 2, 4, 6),
+                (0, 2, 4, 7),
+                (0, 2, 5, 6),
+                (0, 2, 5, 7),
+                (0, 3, 4, 6),
+                (0, 3, 4, 7),
+                (0, 3, 5, 6),
+                (0, 3, 5, 7),
+                (1, 2, 4, 6),
+                (1, 2, 4, 7),
+                (1, 2, 5, 6),
+                (1, 2, 5, 7),
+                (1, 3, 4, 6),
+                (1, 3, 4, 7),
+                (1, 3, 5, 6),
+                (1, 3, 5, 7)
+            ]
+        );
     }
 }

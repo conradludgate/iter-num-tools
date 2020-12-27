@@ -2,9 +2,9 @@
 //!
 //! Used by [LinSpace](crate::lin_space).
 
-use num_traits::FromPrimitive;
-use std::ops::{Add, Div, Mul, RangeInclusive, Sub};
 use crate::map::Function;
+use num_traits::FromPrimitive;
+use core::ops::{Add, Div, Mul, RangeInclusive, Sub};
 
 /// Lerp represents the range over the linear interpolation
 #[derive(Copy, Clone)]
@@ -55,63 +55,69 @@ where
 pub struct LerpPrim<T>(Lerp<T>);
 
 macro_rules! LerpPrimitive {
-    ($($new_lerp:ident; $t:ty; $from:ident),*) => {
-
-$(
-
-impl<T> Lerp<T> where T: FromPrimitive {
-    pub fn $new_lerp(from: RangeInclusive<$t>, to: RangeInclusive<T>) -> Self {
-        let (x0, x1) = from.into_inner();
-        let (y0, y1) = to.into_inner();
-        Lerp {
-            x0: T::$from(x0).unwrap(),
-            x1: T::$from(x1).unwrap(),
-            y0,
-            y1,
+    ($new_lerp:ident; $t:ty; $from:ident) => {
+        impl<T> Lerp<T>
+        where
+            T: FromPrimitive,
+        {
+            pub fn $new_lerp(from: RangeInclusive<$t>, to: RangeInclusive<T>) -> Self {
+                let (x0, x1) = from.into_inner();
+                let (y0, y1) = to.into_inner();
+                Lerp {
+                    x0: T::$from(x0).unwrap(),
+                    x1: T::$from(x1).unwrap(),
+                    y0,
+                    y1,
+                }
+            }
         }
-    }
+
+        impl<T> LerpPrim<T>
+        where
+            T: FromPrimitive,
+        {
+            #[inline]
+            pub fn $new_lerp(from: RangeInclusive<$t>, to: RangeInclusive<T>) -> Self {
+                LerpPrim(Lerp::$new_lerp(from, to))
+            }
+        }
+
+        impl<T> Function<$t> for LerpPrim<T>
+        where
+            T: Mul<Output = T>
+                + Add<Output = T>
+                + Sub<Output = T>
+                + Div<Output = T>
+                + Copy
+                + FromPrimitive,
+        {
+            type Output = T;
+
+            #[inline]
+            fn call(&self, x: $t) -> Self::Output {
+                self.0.lerp(T::$from(x).unwrap())
+            }
+        }
+    };
 }
 
-impl<T> LerpPrim<T> where T: FromPrimitive {
-    #[inline]
-    pub fn $new_lerp(from: RangeInclusive<$t>, to: RangeInclusive<T>) -> Self {
-        LerpPrim(Lerp::$new_lerp(from, to))
-    }
-}
+LerpPrimitive!(new_usize; usize; from_usize);
+LerpPrimitive!(new_u128; u128; from_u128);
+LerpPrimitive!(new_u64; u64; from_u64);
+LerpPrimitive!(new_u32; u32; from_u32);
+LerpPrimitive!(new_u16; u16; from_u16);
+LerpPrimitive!(new_u8; u8; from_u8);
 
-impl<T> Function<$t> for LerpPrim<T>
-where
-    T: Mul<Output = T> + Add<Output = T> + Sub<Output = T> + Div<Output = T> + Copy + FromPrimitive,
-{
-    type Output = T;
+LerpPrimitive!(new_isize; isize; from_isize);
+LerpPrimitive!(new_i128; i128; from_i128);
+LerpPrimitive!(new_i64; i64; from_i64);
+LerpPrimitive!(new_i32; i32; from_i32);
+LerpPrimitive!(new_i16; i16; from_i16);
+LerpPrimitive!(new_i8; i8; from_i8);
 
-    #[inline]
-    fn call(&self, x: $t) -> Self::Output {
-        self.0.lerp(T::$from(x).unwrap())
-    }
-}
+LerpPrimitive!(new_f32; f32; from_f32);
+LerpPrimitive!(new_f64; f64; from_f64);
 
-)*
-
-    }
-}
-
-LerpPrimitive![
-    new_usize; usize; from_usize,
-    new_u128; u128; from_u128,
-    new_u64; u64; from_u64,
-    new_u32; u32; from_u32,
-    new_u8; u8; from_u8,
-
-    new_isize; isize; from_isize,
-    new_i128; i128; from_i128,
-    new_i64; i64; from_i64,
-    new_i32; i32; from_i32,
-    new_i8; i8; from_i8,
-
-    new_f32; f32; from_f32,
-    new_f64; f64; from_f64
-];
 
 #[cfg(test)]
 mod tests {

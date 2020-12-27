@@ -1,6 +1,6 @@
 [package]
 name = "iter_num_tools"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Conrad Ludgate <conradludgate@gmail.com>"]
 edition = "2018"
 description = "Create simple iterators over non integer ranges. itertools + num = iter_num_tools"
@@ -8,10 +8,30 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/conradludgate/iter-num-tools"
 keywords = ["numerics", "mathematics", "iterator"]
-categories = ["algorithms", "rust-patterns"]
+categories = ["algorithms", "rust-patterns", "no-std"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-num-traits = "0.2"
-itertools = "0.10"
+num-traits = { version = "0.2", default-features = false, features = ["libm"] }
+itertools = { version = "0.10", default-features = false }
+
+[dev-dependencies]
+approx = "0.4"
+criterion = "0.3"
+
+[[bench]]
+name = "linspace"
+harness = false
+
+[[bench]]
+name = "logspace"
+harness = false
+
+[[bench]]
+name = "map"
+harness = false
+
+[[bench]]
+name = "arange"
+harness = false

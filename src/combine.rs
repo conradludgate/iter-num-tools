@@ -41,14 +41,13 @@ mod tests {
 
     #[test]
     fn test_combine() {
-        let it = combine(vec![
-            ((0, 1), 2),
-            ((3, 4), 5),
-        ]);
+        // iterator that returns [((0, 1), 2), ((3, 4), 5)]
+        let i = (0..6).step_by(3).map(|i| ((i, i+1), i+2));
 
-        assert!(it.eq(vec![
+        let it = combine(i);
+        assert_eq_iter!(it, [
             (0, 1, 2),
-            (3, 4, 5),
-        ]));
+            (3, 4, 5)
+        ]);
     }
 }

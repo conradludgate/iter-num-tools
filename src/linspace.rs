@@ -1,6 +1,6 @@
 use crate::{lerp::LerpPrim, map::Map};
 use num_traits::FromPrimitive;
-use std::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
+use core::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
 
 /// Iterator over a linear number space
 pub type LinSpace<T> = Map<Range<usize>, LerpPrim<T>>;
@@ -72,12 +72,12 @@ mod tests {
     #[test]
     fn test_lin_space_inclusive() {
         let it = lin_space(1.0..=5.0, 5);
-        assert!(it.eq(vec![1.0, 2.0, 3.0, 4.0, 5.0]));
+        assert_eq_iter!(it, [1.0, 2.0, 3.0, 4.0, 5.0]);
     }
 
     #[test]
     fn test_lin_space_exclusive() {
         let it = lin_space(0.0..5.0, 5);
-        assert!(it.eq(vec![0.0, 1.0, 2.0, 3.0, 4.0]));
+        assert_eq_iter!(it, [0.0, 1.0, 2.0, 3.0, 4.0]);
     }
 }

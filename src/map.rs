@@ -1,6 +1,6 @@
 //! Provides a generic Map iterator that is similar but easier to create type signatures for than [std::iter::Map].
 
-use std::iter::FusedIterator;
+use core::iter::FusedIterator;
 
 /// Function is a generic trait for a Fn(T)->O
 pub trait Function<T> {
@@ -35,6 +35,7 @@ impl<I, F> Map<I, F>
 where
     I: Iterator,
 {
+    #[inline]
     pub fn new(i: impl IntoIterator<Item = I::Item, IntoIter = I>, f: F) -> Self {
         Map {
             i: i.into_iter(),
@@ -93,6 +94,7 @@ where
     I: ExactSizeIterator,
     F: Function<I::Item>,
 {
+    #[inline]
     fn len(&self) -> usize {
         self.i.len()
     }
@@ -107,14 +109,18 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::assert_eq;
-
     use super::*;
 
     #[test]
     fn test_iter() {
-        let c: Vec<_> = Map::new(0..5, |x| 2 * x).collect();
-        assert_eq!(c, vec![0, 2, 4, 6, 8]);
+        let it = Map::new(0..5, |x| 2 * x);
+        assert_eq_iter!(it, [0, 2, 4, 6, 8]);
+    }
+
+    #[test]
+    fn test_size_hint() {
+        let it = Map::new(0..5, |x| 2 * x);
+        assert_eq!(it.size_hint(), (5, Some(5)));
     }
 
     #[test]
@@ -131,8 +137,8 @@ mod tests {
 
     #[test]
     fn test_reverse() {
-        let it = Map::new(0..5, |x| 2 * x);
-        assert!(it.rev().eq(vec![8, 6, 4, 2, 0]));
+        let it = Map::new(0..5, |x| 2 * x).rev();
+        assert_eq_iter!(it, [8, 6, 4, 2, 0]);
     }
 
     #[test]

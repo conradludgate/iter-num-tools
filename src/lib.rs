@@ -112,6 +112,12 @@
 //! assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 //! ```
 
+#![no_std]
+
+#[cfg(test)]
+#[macro_use]
+mod test_util;
+
 pub mod combine;
 pub mod grid;
 pub mod lerp;
@@ -128,3 +134,4 @@ pub use arange_grid::*;
 pub use gridspace::*;
 pub use linspace::*;
 pub use logspace::*;
+

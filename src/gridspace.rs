@@ -42,7 +42,7 @@ pub trait IntoGridSpace<S> {
 }
 
 use crate::{LinSpace, Linear, grid::{Grid2, Grid3, Grid4, Transpose, grid}, lin_space};
-use std::ops::{Range, RangeInclusive};
+use core::ops::{Range, RangeInclusive};
 
 macro_rules! impl_grid_space {
     ($Grid:ident: $($t:ident;$u:ty: $r:ident;$s:ident),*) => {

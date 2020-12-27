@@ -1,5 +1,5 @@
 use num_traits::{real::Real};
-use std::ops::{Range, RangeInclusive};
+use core::ops::{Range, RangeInclusive};
 
 use crate::{LinSpace, Linear, lin_space, map::{Map, Function}};
 
@@ -73,21 +73,18 @@ pub type LogSpace<T> = Map<LinSpace<T>, Exp2>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use itertools::zip_eq;
+
+    use approx::*;
 
     #[test]
     fn test_log_space_inclusive() {
         let it = log_space(1.0..=1000.0, 4);
-        let expected: Vec<f64> = vec![1.0, 10.0, 100.0, 1000.0];
-
-        assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
+        assert_relative_eq_iter!(it, [1.0, 10.0, 100.0, 1000.0]);
     }
 
     #[test]
     fn test_log_space_exclusive() {
         let it = log_space(1.0..1000.0, 3);
-        let expected: Vec<f64> = vec![1.0, 10.0, 100.0];
-
-        assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
+        assert_relative_eq_iter!(it, [1.0, 10.0, 100.0]);
     }
 }

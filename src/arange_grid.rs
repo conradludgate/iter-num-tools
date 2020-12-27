@@ -4,7 +4,7 @@ use crate::{
     IntoLinSpace, LinSpace,
 };
 use num_traits::{real::Real, FromPrimitive, ToPrimitive};
-use std::ops::{Div, Range, Sub};
+use core::ops::{Div, Range, Sub};
 
 /// Creates a grid space over the range made up of fixed step intervals
 ///
