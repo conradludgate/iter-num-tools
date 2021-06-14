@@ -35,15 +35,10 @@ where
     T: Linear,
 {
     fn into_lin_space(self, steps: usize) -> LinSpace<T> {
-        let (start, end) = self.into_inner();
-        let step = T::from_usize(steps - 1).unwrap();
-        let len = end - start;
         LinSpace {
-            start,
-            step,
-            len,
             x: 0,
             steps,
+            util: (self, steps).into(),
         }
     }
 }
@@ -53,15 +48,10 @@ where
     T: Linear,
 {
     fn into_lin_space(self, steps: usize) -> LinSpace<T> {
-        let Range { start, end } = self;
-        let step = T::from_usize(steps).unwrap();
-        let len = end - start;
         LinSpace {
-            start,
-            step,
-            len,
             x: 0,
             steps,
+            util: (self, steps).into(),
         }
     }
 }
@@ -82,27 +72,49 @@ impl<T> Linear for T where
 }
 
 #[derive(Clone, Copy, Debug)]
+pub(crate) struct Lerp<T> {
+    pub(crate) start: T,
+    pub(crate) step: T,
+}
+
+impl<T: Linear> Lerp<T> {
+    #[inline]
+    pub fn lerp(self, x: usize) -> T {
+        let Self { start, step } = self;
+        start + T::from_usize(x).unwrap() * step
+    }
+}
+
+impl<T: Linear> From<(Range<T>, usize)> for Lerp<T> {
+    fn from((range, steps): (Range<T>, usize)) -> Self {
+        let Range { start, end } = range;
+        let step = (end - start) / T::from_usize(steps).unwrap();
+        Self { start, step }
+    }
+}
+
+impl<T: Linear> From<(RangeInclusive<T>, usize)> for Lerp<T> {
+    fn from((range, steps): (RangeInclusive<T>, usize)) -> Self {
+        let (start, end) = range.into_inner();
+        let step = (end - start) / T::from_usize(steps-1).unwrap();
+        Self { start, step }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct LinSpace<T> {
-    x: usize,
-    steps: usize,
-    start: T,
-    len: T,
-    step: T,
+    pub(crate) x: usize,
+    pub(crate) steps: usize,
+    pub(crate) util: Lerp<T>,
 }
 
 impl<T: Linear> Iterator for LinSpace<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let Self {
-            start,
-            step,
-            len,
-            x,
-            steps,
-        } = self;
-        if x < steps {
-            Some(*start + T::from_usize(core::mem::replace(x, *x + 1)).unwrap() / *step * *len)
+        if self.x < self.steps {
+            let n = self.x + 1;
+            Some(self.util.lerp(core::mem::replace(&mut self.x, n)))
         } else {
             None
         }
@@ -117,16 +129,9 @@ impl<T: Linear> Iterator for LinSpace<T> {
 impl<T: Linear> DoubleEndedIterator for LinSpace<T> {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        let Self {
-            start,
-            step,
-            len,
-            x,
-            steps,
-        } = self;
-        if x < steps {
-            *steps -= 1;
-            Some(*start + T::from_usize(*steps).unwrap() / *step * *len)
+        if self.x < self.steps {
+            self.steps -= 1;
+            Some(self.util.lerp(self.steps))
         } else {
             None
         }
@@ -141,9 +146,7 @@ impl<T: Linear> ExactSizeIterator for LinSpace<T> {
 }
 
 impl<T: Linear> FusedIterator for LinSpace<T> {}
-
 unsafe impl<T: Linear> TrustedLen for LinSpace<T> {}
-
 unsafe impl<T: Linear> InPlaceIterable for LinSpace<T> {}
 
 #[cfg(test)]

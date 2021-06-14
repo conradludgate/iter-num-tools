@@ -6,6 +6,9 @@
 #![feature(trusted_random_access)]
 #![feature(try_trait_v2)]
 #![feature(trusted_len)]
+#![feature(maybe_uninit_uninit_array)]
+#![feature(maybe_uninit_array_assume_init)]
+#![feature(maybe_uninit_extra)]
 // #![feature(min_specialization)]
 //! iter_num_tools is a collection if iterator extensions that
 //! make heavy use of number properties.
@@ -126,11 +129,6 @@
 #[cfg(test)]
 #[macro_use]
 mod test_util;
-
-pub mod combine;
-pub mod grid;
-pub mod lerp;
-pub mod map;
 
 mod arange;
 mod arange_grid;
