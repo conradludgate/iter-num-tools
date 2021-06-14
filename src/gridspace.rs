@@ -1,6 +1,6 @@
-use crate::{Lerp, Linear};
+use crate::linspace::{Lerp, Linear};
 use core::{
-    iter::{FusedIterator, InPlaceIterable, TrustedLen},
+    iter::{FusedIterator, TrustedLen},
     ops::{Range, RangeInclusive},
 };
 
@@ -40,7 +40,7 @@ where
     range.into_grid_space(size)
 }
 
-/// Used by [grid_space]
+/// Used by [`grid_space`]
 pub trait IntoGridSpace<S> {
     type GridSpace;
     fn into_grid_space(self, size: S) -> Self::GridSpace;
@@ -122,7 +122,7 @@ impl<T: Linear, const N: usize> IntoGridSpace<usize> for RangeInclusive<[T; N]> 
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct GridSpace<T, const N: usize> {
     pub(crate) utils: [Lerp<T>; N],
     pub(crate) steps: [usize; N],
@@ -206,7 +206,6 @@ impl<T: Linear, const N: usize> ExactSizeIterator for GridSpace<T, N> {
 
 impl<T: Linear, const N: usize> FusedIterator for GridSpace<T, N> {}
 unsafe impl<T: Linear, const N: usize> TrustedLen for GridSpace<T, N> {}
-unsafe impl<T: Linear, const N: usize> InPlaceIterable for GridSpace<T, N> {}
 
 #[cfg(test)]
 mod tests {

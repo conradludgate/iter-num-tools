@@ -1,21 +1,16 @@
 #![allow(incomplete_features)]
 #![feature(impl_trait_in_bindings)]
 #![feature(min_type_alias_impl_trait)]
-#![feature(inherent_associated_types)]
-#![feature(inplace_iteration)]
-#![feature(trusted_random_access)]
-#![feature(try_trait_v2)]
 #![feature(trusted_len)]
 #![feature(maybe_uninit_uninit_array)]
 #![feature(maybe_uninit_array_assume_init)]
 #![feature(maybe_uninit_extra)]
-// #![feature(min_specialization)]
-//! iter_num_tools is a collection if iterator extensions that
+//! `iter_num_tools` is a collection if iterator extensions that
 //! make heavy use of number properties.
 //! Mostly extending on [Range](std::ops::Range).
 //!
-//! ## LinSpace
-//! [LinSpace](lin_space) is an iterator over a range with a fixed number of values all evenly spaced.
+//! ## `LinSpace`
+//! [`LinSpace`](lin_space) is an iterator over a range with a fixed number of values all evenly spaced.
 //!
 //! ```
 //! use iter_num_tools::lin_space;
@@ -30,8 +25,8 @@
 //! ```
 //!
 //!
-//! ## GridSpace
-//! [GridSpace](grid_space) extends on [LinSpace](#linspace), up to 4 dimensions.
+//! ## `GridSpace`
+//! [`GridSpace`](grid_space) extends on [`LinSpace`](#linspace), up to 4 dimensions.
 //!
 //! ```
 //! use iter_num_tools::grid_space;
@@ -39,25 +34,25 @@
 //! // count in 2 dimensions (excluding end points),
 //! // from 0.0 up to 1.0 in the x direction with 2 even steps,
 //! // and 0.0 up to 2.0 in the y direction with 4 even steps
-//! let it = grid_space((0.0, 0.0)..(1.0, 2.0), (2, 4));
+//! let it = grid_space([0.0, 0.0]..[1.0, 2.0], [2, 4]);
 //! assert!(it.eq(vec![
-//!     (0.0, 0.0), (0.0, 0.5), (0.0, 1.0), (0.0, 1.5),
-//!     (0.5, 0.0), (0.5, 0.5), (0.5, 1.0), (0.5, 1.5),
+//!     [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
+//!     [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
 //! ]));
 //!
 //! // count in 2 dimensions (including end points),
 //! // from 0.0 up to 1.0 in the x direction,
 //! // and 0.0 up to 2.0 in the y direction with 3 even steps in all directions
-//! let it = grid_space((0.0, 0.0)..=(1.0, 2.0), 3);
+//! let it = grid_space([0.0, 0.0]..=[1.0, 2.0], 3);
 //! assert!(it.eq(vec![
-//!     (0.0, 0.0), (0.0, 1.0), (0.0, 2.0),
-//!     (0.5, 0.0), (0.5, 1.0), (0.5, 2.0),
-//!     (1.0, 0.0), (1.0, 1.0), (1.0, 2.0),
+//!     [0.0, 0.0], [0.0, 1.0], [0.0, 2.0],
+//!     [0.5, 0.0], [0.5, 1.0], [0.5, 2.0],
+//!     [1.0, 0.0], [1.0, 1.0], [1.0, 2.0],
 //! ]));
 //! ```
 //!
-//! ## Arange
-//! [Arange](arange()) is similar to [LinSpace](#linspace), but instead of a fixed amount of steps,
+//! ## `Arange`
+//! [`Arange`](arange()) is similar to [`LinSpace`](#linspace), but instead of a fixed amount of steps,
 //! it steps by a fixed amount.
 //!
 //! ```
@@ -78,7 +73,7 @@
 //! Therefore, no [RangeInclusive](std::ops::RangeInclusive) implementation is provided.
 //!
 //! ## ArangeGrid
-//! [ArangeGrid](arange_grid()) is the same as [GridSpace](#gridspace) but for [Arange](#arange) instead of [LinSpace](#linspace).
+//! [`ArangeGrid`](arange_grid()) is the same as [`GridSpace`](#gridspace) but for [`Arange`](#arange) instead of [`LinSpace`](#linspace).
 //!
 //!
 //! ```
@@ -88,24 +83,24 @@
 //! // from 0.0 up to 1.0 in the x direction,
 //! // and 0.0 up to 2.0 in the y direction,
 //! // stepping by 0.5 each time
-//! let it = arange_grid((0.0, 0.0)..(1.0, 2.0), 0.5);
+//! let it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
 //! assert!(it.eq(vec![
-//!     (0.0, 0.0), (0.0, 0.5), (0.0, 1.0), (0.0, 1.5),
-//!     (0.5, 0.0), (0.5, 0.5), (0.5, 1.0), (0.5, 1.5),
+//!     [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
+//!     [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
 //! ]));
 //!
 //! // count in 2 dimensions,
 //! // from 0.0 up to 1.0 in the x direction stepping by 0.5 each time,
 //! // and 0.0 up to 2.0 in the y direction stepping by 1.0 each time
-//! let it = arange_grid((0.0, 0.0)..(1.0, 2.0), (0.5, 1.0));
+//! let it = arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]);
 //! assert!(it.eq(vec![
-//!     (0.0, 0.0), (0.0, 1.0),
-//!     (0.5, 0.0), (0.5, 1.0),
+//!     [0.0, 0.0], [0.0, 1.0],
+//!     [0.5, 0.0], [0.5, 1.0],
 //! ]));
 //! ```
 //!
-//! ## LogSpace
-//! [LogSpace](log_space()) is similar to [LinSpace](#linspace), but instead of evenly spaced linear steps, it has evenly spaced logarithmic steps.
+//! ## `LogSpace`
+//! [`LogSpace`](log_space()) is similar to [`LinSpace`](#linspace), but instead of evenly spaced linear steps, it has evenly spaced logarithmic steps.
 //!
 //! ```
 //! use iter_num_tools::log_space;
@@ -136,8 +131,8 @@ mod gridspace;
 mod linspace;
 mod logspace;
 
-pub use arange::*;
-pub use arange_grid::*;
-pub use gridspace::*;
-pub use linspace::*;
-pub use logspace::*;
+pub use arange::{arange, Arange, IntoArange};
+pub use arange_grid::{arange_grid, ArangeGrid, IntoArangeGrid};
+pub use gridspace::{grid_space, GridSpace, IntoGridSpace};
+pub use linspace::{lin_space, LinSpace, IntoLinSpace};
+pub use logspace::{log_space, LogSpace, IntoLogSpace};

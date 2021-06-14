@@ -10,7 +10,7 @@
 [docs.rs]: https://docs.rs/iter_num_tools
 [codecov]: https://codecov.io/gh/conradludgate/iter-num-tools
 
-This is a collection if iterator extensions that make heavy use of number properties. Mostly extending on [Range](std::ops::Range).
+This is a collection if iterator extensions that make heavy use of number properties. Mostly extending on Range.
 
 ## LinSpace
 
@@ -38,20 +38,20 @@ use iter_num_tools::grid_space;
 // count in 2 dimensions (excluding end points),
 // from 0.0 up to 1.0 in the x direction with 2 even steps,
 // and 0.0 up to 2.0 in the y direction with 4 even steps
-let it = grid_space((0.0, 0.0)..(1.0, 2.0), (2, 4));
+let it = grid_space([0.0, 0.0]..[1.0, 2.0], [2, 4]);
 assert!(it.eq(vec![
-    (0.0, 0.0), (0.0, 0.5), (0.0, 1.0), (0.0, 1.5),
-    (0.5, 0.0), (0.5, 0.5), (0.5, 1.0), (0.5, 1.5),
+    [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
+    [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
 ]));
 
 // count in 2 dimensions (including end points),
 // from 0.0 up to 1.0 in the x direction,
 // and 0.0 up to 2.0 in the y direction with 3 even steps in all directions
-let it = grid_space((0.0, 0.0)..=(1.0, 2.0), 3);
+let it = grid_space([0.0, 0.0]..=[1.0, 2.0], 3);
 assert!(it.eq(vec![
-    (0.0, 0.0), (0.0, 1.0), (0.0, 2.0),
-    (0.5, 0.0), (0.5, 1.0), (0.5, 2.0),
-    (1.0, 0.0), (1.0, 1.0), (1.0, 2.0),
+    [0.0, 0.0], [0.0, 1.0], [0.0, 2.0],
+    [0.5, 0.0], [0.5, 1.0], [0.5, 2.0],
+    [1.0, 0.0], [1.0, 1.0], [1.0, 2.0],
 ]));
 ```
 
@@ -76,7 +76,7 @@ use iter_num_tools::arange;
 let it = arange(0.0..=2.1, 0.5);
 ```
 
-We would not expect 2.1 to ever be a value that the iterator will ever meet, but the range suggests it should be included. Therefore, no [RangeInclusive](std::ops::RangeInclusive) implementation is provided.
+We would not expect 2.1 to ever be a value that the iterator will ever meet, but the range suggests it should be included. Therefore, no RangeInclusive implementation is provided.
 
 ## ArangeGrid
 
@@ -84,25 +84,24 @@ ArangeGrid is the same as [GridSpace](#gridspace) but for [Arange](#arange) inst
 
 ```rust
 use iter_num_tools::arange_grid;
-use itertools::Itertools;
 
 // count in 2 dimensions,
 // from 0.0 up to 1.0 in the x direction,
 // and 0.0 up to 2.0 in the y direction,
 // stepping by 0.5 each time
-let it = arange_grid((0.0, 0.0)..(1.0, 2.0), 0.5);
+let it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
 assert!(it.eq(vec![
-    (0.0, 0.0), (0.0, 0.5), (0.0, 1.0), (0.0, 1.5),
-    (0.5, 0.0), (0.5, 0.5), (0.5, 1.0), (0.5, 1.5),
+    [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
+    [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
 ]));
 
 // count in 2 dimensions,
 // from 0.0 up to 1.0 in the x direction stepping by 0.5 each time,
 // and 0.0 up to 2.0 in the y direction stepping by 1.0 each time
-let it = arange_grid((0.0, 0.0)..(1.0, 2.0), (0.5, 1.0));
+let it = arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]);
 assert!(it.eq(vec![
-    (0.0, 0.0), (0.0, 1.0),
-    (0.5, 0.0), (0.5, 1.0),
+    [0.0, 0.0], [0.0, 1.0],
+    [0.5, 0.0], [0.5, 1.0],
 ]));
 ```
 
@@ -118,11 +117,11 @@ use itertools::zip_eq;
 let it = log_space(1.0..=1000.0, 4);
 let expected: Vec<f64> = vec![1.0, 10.0, 100.0, 1000.0];
 
-assert!(it.zip(expected).all(|(x, y)| (x-y).abs() < 1e-10));
+assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 
 // From 1.0 up to 1000.0, taking 3 logarithmic steps
 let it = log_space(1.0..1000.0, 3);
 let expected: Vec<f64> = vec![1.0, 10.0, 100.0];
 
-assert!(it.zip(expected).all(|(x, y)| (x-y).abs() < 1e-10));
+assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 ```

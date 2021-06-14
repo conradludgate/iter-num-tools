@@ -4,7 +4,7 @@ use core::{
 };
 use num_traits::real::Real;
 
-use crate::{lin_space, LinSpace, Linear};
+use crate::linspace::{lin_space, LinSpace, Linear};
 
 /// Creates a logarithmic space over range with a fixed number of steps
 ///
@@ -33,7 +33,7 @@ where
     range.into_log_space(steps)
 }
 
-/// Used by [log_space]
+/// Used by [`log_space`]
 pub trait IntoLogSpace<T> {
     fn into_log_space(self, steps: usize) -> LogSpace<T>;
 }

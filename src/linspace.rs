@@ -1,5 +1,5 @@
 // use crate::{lerp::LinSpaceFn, map::Map};
-use core::iter::{FusedIterator, InPlaceIterable, TrustedLen};
+use core::iter::{FusedIterator, TrustedLen};
 use core::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
 use num_traits::FromPrimitive;
 
@@ -25,7 +25,7 @@ where
     range.into_lin_space(steps)
 }
 
-/// Used by [lin_space]
+/// Used by [`lin_space`]
 pub trait IntoLinSpace<T> {
     fn into_lin_space(self, steps: usize) -> LinSpace<T>;
 }
@@ -56,7 +56,7 @@ where
     }
 }
 
-/// Trait required for [lin_space] implementations.
+/// Trait required for [`lin_space`] implementations.
 pub trait Linear:
     FromPrimitive
     + Mul<Output = Self>
@@ -67,14 +67,19 @@ pub trait Linear:
 {
 }
 impl<T> Linear for T where
-    T: FromPrimitive + Mul<Output = T> + Sub<Output = T> + Add<Output = T> + Div<Output = T> + Copy
+    T: FromPrimitive
+        + Mul<Output = Self>
+        + Sub<Output = Self>
+        + Add<Output = Self>
+        + Div<Output = Self>
+        + Copy
 {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub(crate) struct Lerp<T> {
-    pub(crate) start: T,
-    pub(crate) step: T,
+pub struct Lerp<T> {
+    pub start: T,
+    pub step: T,
 }
 
 impl<T: Linear> Lerp<T> {
@@ -96,12 +101,12 @@ impl<T: Linear> From<(Range<T>, usize)> for Lerp<T> {
 impl<T: Linear> From<(RangeInclusive<T>, usize)> for Lerp<T> {
     fn from((range, steps): (RangeInclusive<T>, usize)) -> Self {
         let (start, end) = range.into_inner();
-        let step = (end - start) / T::from_usize(steps-1).unwrap();
+        let step = (end - start) / T::from_usize(steps - 1).unwrap();
         Self { start, step }
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct LinSpace<T> {
     pub(crate) x: usize,
     pub(crate) steps: usize,
@@ -147,7 +152,6 @@ impl<T: Linear> ExactSizeIterator for LinSpace<T> {
 
 impl<T: Linear> FusedIterator for LinSpace<T> {}
 unsafe impl<T: Linear> TrustedLen for LinSpace<T> {}
-unsafe impl<T: Linear> InPlaceIterable for LinSpace<T> {}
 
 #[cfg(test)]
 mod tests {
