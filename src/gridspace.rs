@@ -1,3 +1,5 @@
+use array_init::array_init;
+
 use crate::linspace::{Lerp, Linear};
 use core::{
     iter::{FusedIterator, TrustedLen},
@@ -51,19 +53,13 @@ impl<T: Linear, const N: usize> IntoGridSpace<[usize; N]> for Range<[T; N]> {
     fn into_grid_space(self, steps: [usize; N]) -> Self::GridSpace {
         let Self { start, end } = self;
 
-        let utils = {
-            let mut utils = core::mem::MaybeUninit::uninit_array();
-            for i in 0..N {
-                utils[i].write((start[i]..end[i], steps[i]).into());
-            }
-            unsafe { core::mem::MaybeUninit::array_assume_init(utils) }
-        };
+        let utils = array_init(|i| (start[i]..end[i], steps[i]).into());
 
         let mut y = [0; N];
         y[0] = steps[0];
 
         GridSpace {
-            utils,
+            lerps: utils,
             steps,
             x: [0; N],
             y,
@@ -75,19 +71,14 @@ impl<T: Linear, const N: usize> IntoGridSpace<[usize; N]> for RangeInclusive<[T;
     type GridSpace = GridSpace<T, N>;
     fn into_grid_space(self, steps: [usize; N]) -> Self::GridSpace {
         let (start, end) = self.into_inner();
-        let utils = {
-            let mut utils = core::mem::MaybeUninit::uninit_array();
-            for i in 0..N {
-                utils[i].write((start[i]..=end[i], steps[i]).into());
-            }
-            unsafe { core::mem::MaybeUninit::array_assume_init(utils) }
-        };
+
+        let utils = array_init(|i| (start[i]..=end[i], steps[i]).into());
 
         let mut y = [0; N];
         y[0] = steps[0];
 
         GridSpace {
-            utils,
+            lerps: utils,
             steps,
             x: [0; N],
             y,
@@ -100,19 +91,13 @@ impl<T: Linear, const N: usize> IntoGridSpace<usize> for Range<[T; N]> {
     fn into_grid_space(self, steps: usize) -> Self::GridSpace {
         let Self { start, end } = self;
 
-        let utils = {
-            let mut utils = core::mem::MaybeUninit::uninit_array();
-            for i in 0..N {
-                utils[i].write((start[i]..end[i], steps).into());
-            }
-            unsafe { core::mem::MaybeUninit::array_assume_init(utils) }
-        };
+        let utils = array_init(|i| (start[i]..end[i], steps).into());
 
         let mut y = [0; N];
         y[0] = steps;
 
         GridSpace {
-            utils,
+            lerps: utils,
             steps: [steps; N],
             x: [0; N],
             y,
@@ -125,19 +110,13 @@ impl<T: Linear, const N: usize> IntoGridSpace<usize> for RangeInclusive<[T; N]> 
     fn into_grid_space(self, steps: usize) -> Self::GridSpace {
         let (start, end) = self.into_inner();
 
-        let utils = {
-            let mut utils = core::mem::MaybeUninit::uninit_array();
-            for i in 0..N {
-                utils[i].write((start[i]..=end[i], steps).into());
-            }
-            unsafe { core::mem::MaybeUninit::array_assume_init(utils) }
-        };
+        let utils = array_init(|i| (start[i]..=end[i], steps).into());
 
         let mut y = [0; N];
         y[0] = steps;
 
         GridSpace {
-            utils,
+            lerps: utils,
             steps: [steps; N],
             x: [0; N],
             y,
@@ -147,18 +126,10 @@ impl<T: Linear, const N: usize> IntoGridSpace<usize> for RangeInclusive<[T; N]> 
 
 #[derive(Clone, Debug)]
 pub struct GridSpace<T, const N: usize> {
-    pub(crate) utils: [Lerp<T>; N],
+    pub(crate) lerps: [Lerp<T>; N],
     pub(crate) steps: [usize; N],
     pub(crate) x: [usize; N],
     pub(crate) y: [usize; N],
-}
-
-fn grid_lerp<T: Linear, const N: usize>(utils: [Lerp<T>; N], x: [usize; N]) -> [T; N] {
-    let mut output = core::mem::MaybeUninit::uninit_array();
-    for i in 0..N {
-        output[i].write(utils[i].lerp(x[i]));
-    }
-    unsafe { core::mem::MaybeUninit::array_assume_init(output) }
 }
 
 fn inc<const N: usize>(mut n: [usize; N], max: &[usize; N]) -> [usize; N] {
@@ -176,11 +147,12 @@ impl<T: Linear, const N: usize> Iterator for GridSpace<T, N> {
     type Item = [T; N];
 
     fn next(&mut self) -> Option<Self::Item> {
-        let Self { utils, steps, x, y } = self;
+        let Self { lerps, steps, x, y } = self;
 
         if (*x).lt(y) {
             let n = inc(*x, steps);
-            Some(grid_lerp(*utils, core::mem::replace(x, n)))
+            let n = core::mem::replace(x, n);
+            Some(array_init(|i| lerps[i].lerp(n[i])))
         } else {
             None
         }
@@ -203,11 +175,11 @@ fn dec<const N: usize>(n: &mut [usize; N], max: &[usize; N]) {
 
 impl<T: Linear, const N: usize> DoubleEndedIterator for GridSpace<T, N> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        let Self { utils, steps, x, y } = self;
+        let Self { lerps, steps, x, y } = self;
 
         if (*x).lt(y) {
             dec(y, steps);
-            Some(grid_lerp(*utils, *y))
+            Some(array_init(|i| lerps[i].lerp(y[i])))
         } else {
             None
         }
@@ -320,20 +292,10 @@ mod tests {
         );
     }
 
-
-
     #[test]
     fn test_grid_space_exclusive_single() {
         let it = grid_space([0.0, 0.0]..[1.0, 1.0], 2);
-        assert_eq_iter!(
-            it,
-            [
-                [0.0, 0.0],
-                [0.0, 0.5],
-                [0.5, 0.0],
-                [0.5, 0.5]
-            ]
-        );
+        assert_eq_iter!(it, [[0.0, 0.0], [0.0, 0.5], [0.5, 0.0], [0.5, 0.5]]);
     }
 
     #[test]
@@ -354,7 +316,6 @@ mod tests {
             ]
         );
     }
-
 
     #[test]
     fn test_grid_space_exclusive_len() {

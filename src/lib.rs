@@ -2,9 +2,6 @@
 #![feature(impl_trait_in_bindings)]
 #![feature(min_type_alias_impl_trait)]
 #![feature(trusted_len)]
-#![feature(maybe_uninit_uninit_array)]
-#![feature(maybe_uninit_array_assume_init)]
-#![feature(maybe_uninit_extra)]
 //! `iter_num_tools` is a collection if iterator extensions that
 //! make heavy use of number properties.
 //! Mostly extending on [Range](std::ops::Range).
@@ -26,7 +23,7 @@
 //!
 //!
 //! ## `GridSpace`
-//! [`GridSpace`](grid_space) extends on [`LinSpace`](#linspace), up to 4 dimensions.
+//! [`GridSpace`](grid_space) extends on [`LinSpace`](#linspace).
 //!
 //! ```
 //! use iter_num_tools::grid_space;

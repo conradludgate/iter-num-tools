@@ -30,7 +30,7 @@ assert!(it.eq([0.0, 1.0, 2.0, 3.0, 4.0]));
 
 ## GridSpace
 
-GridSpace extends on [LinSpace](#linspace), up to 4 dimensions.
+GridSpace extends on [LinSpace](#linspace).
 
 ```rust
 use iter_num_tools::grid_space;

@@ -1,5 +1,6 @@
 use crate::{arange::arange_lerp, gridspace::GridSpace, linspace::Linear};
 use core::ops::Range;
+use array_init::array_init;
 use num_traits::real::Real;
 
 
@@ -34,36 +35,37 @@ pub type ArangeGrid<T, const N: usize> = GridSpace<T, N>;
 ///     [1.0, 1.0, 0.0], [1.0, 1.0, 1.0],
 /// ]);
 /// ```
-pub fn arange_grid<R, S>(range: R, size: S) -> <R as IntoArangeGrid<S>>::ArangeGrid
+pub fn arange_grid<R, S>(range: R, step: S) -> <R as IntoArangeGrid<S>>::ArangeGrid
 where
     R: IntoArangeGrid<S>,
 {
-    range.into_arange_grid(size)
+    range.into_arange_grid(step)
 }
 
 /// Used by [`arange_grid`]
 pub trait IntoArangeGrid<S> {
     type ArangeGrid;
-    fn into_arange_grid(self, size: S) -> Self::ArangeGrid;
+    fn into_arange_grid(self, step: S) -> Self::ArangeGrid;
 }
 
 impl<F: Real + Linear, const N: usize> IntoArangeGrid<[F; N]> for Range<[F; N]> {
     type ArangeGrid = ArangeGrid<F, N>;
 
-    fn into_arange_grid(self, size: [F; N]) -> Self::ArangeGrid {
+    fn into_arange_grid(self, step: [F; N]) -> Self::ArangeGrid {
         let Self { start, end } = self;
-        let mut utils = core::mem::MaybeUninit::uninit_array();
-        let mut steps = core::mem::MaybeUninit::uninit_array();
-        for i in 0..N {
-            let (util, s) = arange_lerp(start[i]..end[i], size[i]);
-            utils[i].write(util);
-            steps[i].write(s);
-        }
-        let steps = unsafe { core::mem::MaybeUninit::array_assume_init(steps) };
+
+        let mut steps = [0; N];
+        let utils = array_init(|i| {
+            let (util, s) = arange_lerp(start[i]..end[i], step[i]);
+            steps[i] = s;
+            util
+        });
+
         let mut y = [0; N];
         y[0] = steps[0];
+
         ArangeGrid {
-            utils: unsafe { core::mem::MaybeUninit::array_assume_init(utils) },
+            lerps: utils,
             steps,
             x: [0; N],
             y,
@@ -74,23 +76,81 @@ impl<F: Real + Linear, const N: usize> IntoArangeGrid<[F; N]> for Range<[F; N]> 
 impl<F: Real + Linear, const N: usize> IntoArangeGrid<F> for Range<[F; N]> {
     type ArangeGrid = ArangeGrid<F, N>;
 
-    fn into_arange_grid(self, size: F) -> Self::ArangeGrid {
+    fn into_arange_grid(self, step: F) -> Self::ArangeGrid {
         let Self { start, end } = self;
-        let mut utils = core::mem::MaybeUninit::uninit_array();
-        let mut steps = core::mem::MaybeUninit::uninit_array();
-        for i in 0..N {
-            let (util, s) = arange_lerp(start[i]..end[i], size);
-            utils[i].write(util);
-            steps[i].write(s);
-        }
-        let steps = unsafe { core::mem::MaybeUninit::array_assume_init(steps) };
+
+        let mut steps = [0; N];
+        let utils = array_init(|i| {
+            let (util, s) = arange_lerp(start[i]..end[i], step);
+            steps[i] = s;
+            util
+        });
+
         let mut y = [0; N];
         y[0] = steps[0];
+
         ArangeGrid {
-            utils: unsafe { core::mem::MaybeUninit::array_assume_init(utils) },
+            lerps: utils,
             steps,
             x: [0; N],
             y,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_arange_grid_exclusive() {
+        let it = arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]);
+        assert_eq_iter!(
+            it,
+            [
+                [0.0, 0.0],
+                [0.0, 1.0],
+                [0.5, 0.0],
+                [0.5, 1.0]
+            ]
+        );
+    }
+
+    #[test]
+    fn test_arange_grid_exclusive_rev() {
+        let it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
+        assert_eq_iter!(
+            it.rev(),
+            [
+                [0.5, 1.5],
+                [0.5, 1.0],
+                [0.5, 0.5],
+                [0.5, 0.0],
+                [0.0, 1.5],
+                [0.0, 1.0],
+                [0.0, 0.5],
+                [0.0, 0.0]
+            ]
+        );
+    }
+
+    #[test]
+    fn test_arange_grid_exclusive_len() {
+        let mut it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
+
+        let mut expected_len = 8;
+
+        assert_eq!(it.size_hint(), (expected_len, Some(expected_len)));
+
+        while expected_len > 0 {
+            assert_eq!(it.len(), expected_len);
+            it.next();
+            expected_len -= 1;
+            assert_eq!(it.len(), expected_len);
+            it.next_back();
+            expected_len -= 1;
+        }
+
+        assert_eq!(it.len(), expected_len);
     }
 }
