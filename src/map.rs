@@ -1,6 +1,6 @@
 //! Provides a generic Map iterator that is similar but easier to create type signatures for than [std::iter::Map].
 
-use core::iter::FusedIterator;
+use core::iter::{FusedIterator, InPlaceIterable, SourceIter, TrustedLen};
 
 /// Function is a generic trait for a Fn(T)->O
 pub trait Function<T> {
@@ -35,7 +35,6 @@ impl<I, F> Map<I, F>
 where
     I: Iterator,
 {
-    #[inline]
     pub fn new(i: impl IntoIterator<Item = I::Item, IntoIter = I>, f: F) -> Self {
         Map {
             i: i.into_iter(),
@@ -52,29 +51,17 @@ where
     type Item = F::Output;
 
     #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        Some(self.f.call(self.i.next()?))
+    fn next(&mut self) -> Option<F::Output> {
+        // self.f.call(self.i.next()?)
+        match self.i.next() {
+            Some(x) => Some(self.f.call(x)),
+            None => None,
+        }
     }
 
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.i.size_hint()
-    }
-
-    #[inline]
-    fn count(self) -> usize
-    where
-        Self: Sized,
-    {
-        self.i.count()
-    }
-
-    #[inline]
-    fn last(self) -> Option<Self::Item>
-    where
-        Self: Sized,
-    {
-        Some(self.f.call(self.i.last()?))
     }
 }
 
@@ -106,6 +93,29 @@ where
     F: Function<I::Item>,
 {
 }
+
+unsafe impl<I, F> TrustedLen for Map<I, F>
+where
+    I: TrustedLen,
+    F: Function<I::Item>,
+{
+}
+
+unsafe impl<S: Iterator, I: Iterator, F> SourceIter for Map<I, F>
+where
+    F: Function<I::Item>,
+    I: SourceIter<Source = S>,
+{
+    type Source = S;
+
+    #[inline]
+    unsafe fn as_inner(&mut self) -> &mut S {
+        // SAFETY: unsafe function forwarding to unsafe function with the same requirements
+        SourceIter::as_inner(&mut self.i)
+    }
+}
+
+unsafe impl<I: InPlaceIterable, F> InPlaceIterable for Map<I, F> where F: Function<I::Item> {}
 
 #[cfg(test)]
 mod tests {

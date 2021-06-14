@@ -1,3 +1,12 @@
+#![allow(incomplete_features)]
+#![feature(impl_trait_in_bindings)]
+#![feature(min_type_alias_impl_trait)]
+#![feature(inherent_associated_types)]
+#![feature(inplace_iteration)]
+#![feature(trusted_random_access)]
+#![feature(try_trait_v2)]
+#![feature(trusted_len)]
+// #![feature(min_specialization)]
 //! iter_num_tools is a collection if iterator extensions that
 //! make heavy use of number properties.
 //! Mostly extending on [Range](std::ops::Range).
@@ -134,4 +143,3 @@ pub use arange_grid::*;
 pub use gridspace::*;
 pub use linspace::*;
 pub use logspace::*;
-

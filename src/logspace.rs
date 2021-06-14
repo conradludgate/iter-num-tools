@@ -1,7 +1,10 @@
-use num_traits::{real::Real};
-use core::ops::{Range, RangeInclusive};
+use core::{
+    marker::PhantomData,
+    ops::{Range, RangeInclusive},
+};
+use num_traits::real::Real;
 
-use crate::{LinSpace, Linear, lin_space, map::{Map, Function}};
+use crate::{lin_space, LinSpace, Linear};
 
 /// Creates a logarithmic space over range with a fixed number of steps
 ///
@@ -41,7 +44,7 @@ where
 {
     fn into_log_space(self, steps: usize) -> LogSpace<T> {
         let (a, b) = self.into_inner();
-        Map::new(lin_space(a.log2()..=b.log2(), steps), Exp2)
+        lin_space(a.log2()..=b.log2(), steps).map(Exp2Impl::FUN)
     }
 }
 
@@ -51,24 +54,23 @@ where
 {
     fn into_log_space(self, steps: usize) -> LogSpace<T> {
         let Range { start: a, end: b } = self;
-        Map::new(lin_space(a.log2()..b.log2(), steps), Exp2)
+        lin_space(a.log2()..b.log2(), steps).map(Exp2Impl::FUN)
     }
 }
 
-/// Implements [Function](crate::map::Function) to perform [exp2](num_traits::real::Real::exp2())
-pub struct Exp2;
-
-impl<T> Function<T> for Exp2 where T: Real {
-    type Output = T;
-
-    #[inline]
-    fn call(&self, x: T) -> Self::Output {
-        x.exp2()
-    }
+type Exp2<T> = impl Fn(T) -> T;
+struct Exp2Impl<T>(PhantomData<T>);
+impl<T: Real> Exp2Impl<T> {
+    const FUN: Exp2<T> = {
+        fn exp2<T: Real>(x: T) -> T {
+            x.exp2()
+        }
+        exp2::<T>
+    };
 }
 
 /// Iterator over a logarithmic number space
-pub type LogSpace<T> = Map<LinSpace<T>, Exp2>;
+pub type LogSpace<T> = core::iter::Map<LinSpace<T>, Exp2<T>>;
 
 #[cfg(test)]
 mod tests {
