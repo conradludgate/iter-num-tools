@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 #![allow(incomplete_features)]
 #![feature(impl_trait_in_bindings)]
 #![feature(min_type_alias_impl_trait)]
@@ -117,10 +118,6 @@
 //! ```
 
 #![no_std]
-
-#[cfg(test)]
-#[macro_use]
-mod test_util;
 
 mod arange;
 mod arange_grid;

@@ -3,7 +3,7 @@ use core::ops::Range;
 use array_init::array_init;
 use num_traits::real::Real;
 
-
+/// Iterator returned by `arange_grid`
 pub type ArangeGrid<T, const N: usize> = GridSpace<T, N>;
 
 /// Creates a grid space over the range made up of fixed step intervals
@@ -35,23 +35,21 @@ pub type ArangeGrid<T, const N: usize> = GridSpace<T, N>;
 ///     [1.0, 1.0, 0.0], [1.0, 1.0, 1.0],
 /// ]);
 /// ```
-pub fn arange_grid<R, S>(range: R, step: S) -> <R as IntoArangeGrid<S>>::ArangeGrid
+pub fn arange_grid<F, R, S, const N: usize>(range: R, step: S) -> ArangeGrid<F, N>
 where
-    R: IntoArangeGrid<S>,
+    R: IntoArangeGrid<F, S, N>,
 {
     range.into_arange_grid(step)
 }
 
 /// Used by [`arange_grid`]
-pub trait IntoArangeGrid<S> {
-    type ArangeGrid;
-    fn into_arange_grid(self, step: S) -> Self::ArangeGrid;
+pub trait IntoArangeGrid<F, S, const N: usize> {
+    /// Convert self into an [`ArangeGrid`]
+    fn into_arange_grid(self, step: S) -> ArangeGrid<F, N>;
 }
 
-impl<F: Real + Linear, const N: usize> IntoArangeGrid<[F; N]> for Range<[F; N]> {
-    type ArangeGrid = ArangeGrid<F, N>;
-
-    fn into_arange_grid(self, step: [F; N]) -> Self::ArangeGrid {
+impl<F: Real + Linear, const N: usize> IntoArangeGrid<F, [F; N], N> for Range<[F; N]> {
+    fn into_arange_grid(self, step: [F; N]) -> ArangeGrid<F, N> {
         let Self { start, end } = self;
 
         let mut steps = [0; N];
@@ -73,10 +71,8 @@ impl<F: Real + Linear, const N: usize> IntoArangeGrid<[F; N]> for Range<[F; N]> 
     }
 }
 
-impl<F: Real + Linear, const N: usize> IntoArangeGrid<F> for Range<[F; N]> {
-    type ArangeGrid = ArangeGrid<F, N>;
-
-    fn into_arange_grid(self, step: F) -> Self::ArangeGrid {
+impl<F: Real + Linear, const N: usize> IntoArangeGrid<F, F, N> for Range<[F; N]> {
+    fn into_arange_grid(self, step: F) -> ArangeGrid<F, N> {
         let Self { start, end } = self;
 
         let mut steps = [0; N];
@@ -105,7 +101,7 @@ mod tests {
     #[test]
     fn test_arange_grid_exclusive() {
         let it = arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]);
-        assert_eq_iter!(
+        itertools::assert_equal(
             it,
             [
                 [0.0, 0.0],
@@ -119,7 +115,7 @@ mod tests {
     #[test]
     fn test_arange_grid_exclusive_rev() {
         let it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
-        assert_eq_iter!(
+        itertools::assert_equal(
             it.rev(),
             [
                 [0.5, 1.5],

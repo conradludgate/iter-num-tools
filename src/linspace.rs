@@ -27,6 +27,7 @@ where
 
 /// Used by [`lin_space`]
 pub trait IntoLinSpace<T> {
+    /// Convert self into a [`LinSpace`]
     fn into_lin_space(self, steps: usize) -> LinSpace<T>;
 }
 
@@ -106,6 +107,7 @@ impl<T: Linear> From<(RangeInclusive<T>, usize)> for Lerp<T> {
     }
 }
 
+/// Iterator returned by [`lin_space`]
 #[derive(Clone, Debug)]
 pub struct LinSpace<T> {
     pub(crate) x: usize,
@@ -160,19 +162,19 @@ mod tests {
     #[test]
     fn test_lin_space_inclusive() {
         let it = lin_space(1.0..=5.0, 5);
-        assert_eq_iter!(it, [1.0, 2.0, 3.0, 4.0, 5.0]);
+        itertools::assert_equal(it, [1.0, 2.0, 3.0, 4.0, 5.0]);
     }
 
     #[test]
     fn test_lin_space_exclusive() {
         let it = lin_space(0.0..5.0, 5);
-        assert_eq_iter!(it, [0.0, 1.0, 2.0, 3.0, 4.0]);
+        itertools::assert_equal(it, [0.0, 1.0, 2.0, 3.0, 4.0]);
     }
 
     #[test]
     fn test_lin_space_exclusive_rev() {
         let it = lin_space(0.0..5.0, 5).rev();
-        assert_eq_iter!(it, [4.0, 3.0, 2.0, 1.0, 0.0]);
+        itertools::assert_equal(it, [4.0, 3.0, 2.0, 1.0, 0.0]);
     }
 
     #[test]

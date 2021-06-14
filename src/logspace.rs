@@ -35,6 +35,7 @@ where
 
 /// Used by [`log_space`]
 pub trait IntoLogSpace<T> {
+    /// Convert self into a [`LogSpace`]
     fn into_log_space(self, steps: usize) -> LogSpace<T>;
 }
 
@@ -69,24 +70,24 @@ impl<T: Real> Exp2Impl<T> {
     };
 }
 
-/// Iterator over a logarithmic number space
+/// Iterator returned by [`log_space`]
 pub type LogSpace<T> = core::iter::Map<LinSpace<T>, Exp2<T>>;
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    use approx::*;
+    use itertools::zip_eq;
 
     #[test]
     fn test_log_space_inclusive() {
         let it = log_space(1.0..=1000.0, 4);
-        assert_relative_eq_iter!(it, [1.0, 10.0, 100.0, 1000.0]);
+        assert!(zip_eq(it, [1.0, 10.0, 100.0, 1000.0]).all(|(a, b)| (a - b).abs() < 1e-10))
     }
 
     #[test]
     fn test_log_space_exclusive() {
         let it = log_space(1.0..1000.0, 3);
-        assert_relative_eq_iter!(it, [1.0, 10.0, 100.0]);
+        assert!(zip_eq(it, [1.0, 10.0, 100.0]).all(|(a, b)| (a - b).abs() < 1e-10))
     }
 }

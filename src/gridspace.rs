@@ -35,22 +35,21 @@ use core::{
 ///     [1, 1, 0], [1, 1, 1],
 /// ]);
 /// ```
-pub fn grid_space<R, S>(range: R, steps: S) -> <R as IntoGridSpace<S>>::GridSpace
+pub fn grid_space<T, R, S, const N: usize>(range: R, steps: S) -> GridSpace<T, N>
 where
-    R: IntoGridSpace<S>,
+    R: IntoGridSpace<T, S, N>,
 {
     range.into_grid_space(steps)
 }
 
 /// Used by [`grid_space`]
-pub trait IntoGridSpace<S> {
-    type GridSpace;
-    fn into_grid_space(self, steps: S) -> Self::GridSpace;
+pub trait IntoGridSpace<T, S, const N: usize> {
+    /// Convert self into a [`GridSpace`]
+    fn into_grid_space(self, steps: S) -> GridSpace<T, N>;
 }
 
-impl<T: Linear, const N: usize> IntoGridSpace<[usize; N]> for Range<[T; N]> {
-    type GridSpace = GridSpace<T, N>;
-    fn into_grid_space(self, steps: [usize; N]) -> Self::GridSpace {
+impl<T: Linear, const N: usize> IntoGridSpace<T, [usize; N], N> for Range<[T; N]> {
+    fn into_grid_space(self, steps: [usize; N]) -> GridSpace<T, N> {
         let Self { start, end } = self;
 
         let utils = array_init(|i| (start[i]..end[i], steps[i]).into());
@@ -67,9 +66,8 @@ impl<T: Linear, const N: usize> IntoGridSpace<[usize; N]> for Range<[T; N]> {
     }
 }
 
-impl<T: Linear, const N: usize> IntoGridSpace<[usize; N]> for RangeInclusive<[T; N]> {
-    type GridSpace = GridSpace<T, N>;
-    fn into_grid_space(self, steps: [usize; N]) -> Self::GridSpace {
+impl<T: Linear, const N: usize> IntoGridSpace<T, [usize; N], N> for RangeInclusive<[T; N]> {
+    fn into_grid_space(self, steps: [usize; N]) -> GridSpace<T, N> {
         let (start, end) = self.into_inner();
 
         let utils = array_init(|i| (start[i]..=end[i], steps[i]).into());
@@ -86,9 +84,8 @@ impl<T: Linear, const N: usize> IntoGridSpace<[usize; N]> for RangeInclusive<[T;
     }
 }
 
-impl<T: Linear, const N: usize> IntoGridSpace<usize> for Range<[T; N]> {
-    type GridSpace = GridSpace<T, N>;
-    fn into_grid_space(self, steps: usize) -> Self::GridSpace {
+impl<T: Linear, const N: usize> IntoGridSpace<T, usize, N> for Range<[T; N]> {
+    fn into_grid_space(self, steps: usize) -> GridSpace<T, N> {
         let Self { start, end } = self;
 
         let utils = array_init(|i| (start[i]..end[i], steps).into());
@@ -105,9 +102,8 @@ impl<T: Linear, const N: usize> IntoGridSpace<usize> for Range<[T; N]> {
     }
 }
 
-impl<T: Linear, const N: usize> IntoGridSpace<usize> for RangeInclusive<[T; N]> {
-    type GridSpace = GridSpace<T, N>;
-    fn into_grid_space(self, steps: usize) -> Self::GridSpace {
+impl<T: Linear, const N: usize> IntoGridSpace<T, usize, N> for RangeInclusive<[T; N]> {
+    fn into_grid_space(self, steps: usize) -> GridSpace<T, N> {
         let (start, end) = self.into_inner();
 
         let utils = array_init(|i| (start[i]..=end[i], steps).into());
@@ -124,6 +120,7 @@ impl<T: Linear, const N: usize> IntoGridSpace<usize> for RangeInclusive<[T; N]> 
     }
 }
 
+/// Iterator returned by [`grid_space`]
 #[derive(Clone, Debug)]
 pub struct GridSpace<T, const N: usize> {
     pub(crate) lerps: [Lerp<T>; N],
@@ -209,7 +206,7 @@ mod tests {
     #[test]
     fn test_grid_space_exclusive() {
         let it = grid_space([0.0, 0.0]..[1.0, 2.0], [2, 4]);
-        assert_eq_iter!(
+        itertools::assert_equal(
             it,
             [
                 [0.0, 0.0],
@@ -227,7 +224,7 @@ mod tests {
     #[test]
     fn test_grid_space_exclusive_rev() {
         let it = grid_space([0.0, 0.0]..[1.0, 2.0], [2, 4]);
-        assert_eq_iter!(
+        itertools::assert_equal(
             it.rev(),
             [
                 [0.5, 1.5],
@@ -245,7 +242,7 @@ mod tests {
     #[test]
     fn test_grid_space_inclusive() {
         let it = grid_space([0.0, 0.0]..=[1.0, 2.0], [3, 5]);
-        assert_eq_iter!(
+        itertools::assert_equal(
             it,
             [
                 [0.0, 0.0],
@@ -270,7 +267,7 @@ mod tests {
     #[test]
     fn test_grid_space_inclusive_rev() {
         let it = grid_space([0.0, 0.0]..=[1.0, 2.0], [3, 5]);
-        assert_eq_iter!(
+        itertools::assert_equal(
             it.rev(),
             [
                 [1.0, 2.0],
@@ -295,13 +292,13 @@ mod tests {
     #[test]
     fn test_grid_space_exclusive_single() {
         let it = grid_space([0.0, 0.0]..[1.0, 1.0], 2);
-        assert_eq_iter!(it, [[0.0, 0.0], [0.0, 0.5], [0.5, 0.0], [0.5, 0.5]]);
+        itertools::assert_equal(it, [[0.0, 0.0], [0.0, 0.5], [0.5, 0.0], [0.5, 0.5]]);
     }
 
     #[test]
     fn test_grid_space_inclusive_single() {
         let it = grid_space([0.0, 0.0]..=[1.0, 1.0], 3);
-        assert_eq_iter!(
+        itertools::assert_equal(
             it,
             [
                 [0.0, 0.0],
