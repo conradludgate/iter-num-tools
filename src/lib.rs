@@ -17,11 +17,11 @@
 //!
 //! // Count from 1.0 up to and including 5.0, with 5 numbers counted in total
 //! let it = lin_space(1.0..=5.0, 5);
-//! assert!(it.eq(vec![1.0, 2.0, 3.0, 4.0, 5.0]));
+//! assert!(it.eq([1.0, 2.0, 3.0, 4.0, 5.0]));
 //!
 //! // Count from 0.0 up to and excluding 5.0, with 5 numbers counted in total
 //! let it = lin_space(0.0..5.0, 5);
-//! assert!(it.eq(vec![0.0, 1.0, 2.0, 3.0, 4.0]));
+//! assert!(it.eq([0.0, 1.0, 2.0, 3.0, 4.0]));
 //! ```
 //!
 //!
@@ -35,7 +35,7 @@
 //! // from 0.0 up to 1.0 in the x direction with 2 even steps,
 //! // and 0.0 up to 2.0 in the y direction with 4 even steps
 //! let it = grid_space([0.0, 0.0]..[1.0, 2.0], [2, 4]);
-//! assert!(it.eq(vec![
+//! assert!(it.eq([
 //!     [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
 //!     [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
 //! ]));
@@ -44,7 +44,7 @@
 //! // from 0.0 up to 1.0 in the x direction,
 //! // and 0.0 up to 2.0 in the y direction with 3 even steps in all directions
 //! let it = grid_space([0.0, 0.0]..=[1.0, 2.0], 3);
-//! assert!(it.eq(vec![
+//! assert!(it.eq([
 //!     [0.0, 0.0], [0.0, 1.0], [0.0, 2.0],
 //!     [0.5, 0.0], [0.5, 1.0], [0.5, 2.0],
 //!     [1.0, 0.0], [1.0, 1.0], [1.0, 2.0],
@@ -59,7 +59,7 @@
 //! use iter_num_tools::arange;
 //!
 //! let it = arange(0.0..2.0, 0.5);
-//! assert!(it.eq(vec![0.0, 0.5, 1.0, 1.5]));
+//! assert!(it.eq([0.0, 0.5, 1.0, 1.5]));
 //! ```
 //!
 //! #### Note
@@ -84,7 +84,7 @@
 //! // and 0.0 up to 2.0 in the y direction,
 //! // stepping by 0.5 each time
 //! let it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
-//! assert!(it.eq(vec![
+//! assert!(it.eq([
 //!     [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
 //!     [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
 //! ]));
@@ -93,7 +93,7 @@
 //! // from 0.0 up to 1.0 in the x direction stepping by 0.5 each time,
 //! // and 0.0 up to 2.0 in the y direction stepping by 1.0 each time
 //! let it = arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]);
-//! assert!(it.eq(vec![
+//! assert!(it.eq([
 //!     [0.0, 0.0], [0.0, 1.0],
 //!     [0.5, 0.0], [0.5, 1.0],
 //! ]));
@@ -108,13 +108,13 @@
 //!
 //! // From 1.0 up to and including 1000.0, taking 4 logarithmic steps
 //! let it = log_space(1.0..=1000.0, 4);
-//! let expected: Vec<f64> = vec![1.0, 10.0, 100.0, 1000.0];
+//! let expected: [f64; 4] = [1.0, 10.0, 100.0, 1000.0];
 //!
 //! assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 //!
 //! // From 1.0 up to 1000.0, taking 3 logarithmic steps
 //! let it = log_space(1.0..1000.0, 3);
-//! let expected: Vec<f64> = vec![1.0, 10.0, 100.0];
+//! let expected: [f64; 3] = [1.0, 10.0, 100.0];
 //!
 //! assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 //! ```

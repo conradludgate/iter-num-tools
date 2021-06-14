@@ -11,11 +11,11 @@ use num_traits::FromPrimitive;
 ///
 /// // Inclusive
 /// let it = lin_space(20.0..=21.0, 3);
-/// itertools::assert_equal(it, vec![20.0, 20.5, 21.0]);
+/// itertools::assert_equal(it, [20.0, 20.5, 21.0]);
 ///
 /// // Exclusive
 /// let it = lin_space(20.0..21.0, 2);
-/// itertools::assert_equal(it, vec![20.0, 20.5]);
+/// itertools::assert_equal(it, [20.0, 20.5]);
 /// ```
 #[inline]
 pub fn lin_space<R, T>(range: R, steps: usize) -> LinSpace<T>
@@ -167,5 +167,31 @@ mod tests {
     fn test_lin_space_exclusive() {
         let it = lin_space(0.0..5.0, 5);
         assert_eq_iter!(it, [0.0, 1.0, 2.0, 3.0, 4.0]);
+    }
+
+    #[test]
+    fn test_lin_space_exclusive_rev() {
+        let it = lin_space(0.0..5.0, 5).rev();
+        assert_eq_iter!(it, [4.0, 3.0, 2.0, 1.0, 0.0]);
+    }
+
+    #[test]
+    fn test_lin_space_exclusive_len() {
+        let mut it = lin_space(0.0..=5.0, 6);
+        let mut expected_len = 6;
+
+        assert_eq!(it.size_hint(), (expected_len, Some(expected_len)));
+
+        while expected_len > 0 {
+            assert_eq!(it.len(), expected_len);
+            it.next();
+            expected_len -= 1;
+
+            assert_eq!(it.len(), expected_len);
+            it.next_back();
+            expected_len -= 1;
+        }
+
+        assert_eq!(it.len(), expected_len);
     }
 }

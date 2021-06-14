@@ -33,32 +33,38 @@ use core::{
 ///     [1, 1, 0], [1, 1, 1],
 /// ]);
 /// ```
-pub fn grid_space<R, S>(range: R, size: S) -> <R as IntoGridSpace<S>>::GridSpace
+pub fn grid_space<R, S>(range: R, steps: S) -> <R as IntoGridSpace<S>>::GridSpace
 where
     R: IntoGridSpace<S>,
 {
-    range.into_grid_space(size)
+    range.into_grid_space(steps)
 }
 
 /// Used by [`grid_space`]
 pub trait IntoGridSpace<S> {
     type GridSpace;
-    fn into_grid_space(self, size: S) -> Self::GridSpace;
+    fn into_grid_space(self, steps: S) -> Self::GridSpace;
 }
 
 impl<T: Linear, const N: usize> IntoGridSpace<[usize; N]> for Range<[T; N]> {
     type GridSpace = GridSpace<T, N>;
-    fn into_grid_space(self, size: [usize; N]) -> Self::GridSpace {
+    fn into_grid_space(self, steps: [usize; N]) -> Self::GridSpace {
         let Self { start, end } = self;
-        let mut utils = core::mem::MaybeUninit::uninit_array();
-        for i in 0..N {
-            utils[i].write((start[i]..end[i], size[i]).into());
-        }
+
+        let utils = {
+            let mut utils = core::mem::MaybeUninit::uninit_array();
+            for i in 0..N {
+                utils[i].write((start[i]..end[i], steps[i]).into());
+            }
+            unsafe { core::mem::MaybeUninit::array_assume_init(utils) }
+        };
+
         let mut y = [0; N];
-        y[0] = size[0];
+        y[0] = steps[0];
+
         GridSpace {
-            utils: unsafe { core::mem::MaybeUninit::array_assume_init(utils) },
-            steps: size,
+            utils,
+            steps,
             x: [0; N],
             y,
         }
@@ -67,17 +73,22 @@ impl<T: Linear, const N: usize> IntoGridSpace<[usize; N]> for Range<[T; N]> {
 
 impl<T: Linear, const N: usize> IntoGridSpace<[usize; N]> for RangeInclusive<[T; N]> {
     type GridSpace = GridSpace<T, N>;
-    fn into_grid_space(self, size: [usize; N]) -> Self::GridSpace {
+    fn into_grid_space(self, steps: [usize; N]) -> Self::GridSpace {
         let (start, end) = self.into_inner();
-        let mut utils = core::mem::MaybeUninit::uninit_array();
-        for i in 0..N {
-            utils[i].write((start[i]..=end[i], size[i]).into());
-        }
+        let utils = {
+            let mut utils = core::mem::MaybeUninit::uninit_array();
+            for i in 0..N {
+                utils[i].write((start[i]..=end[i], steps[i]).into());
+            }
+            unsafe { core::mem::MaybeUninit::array_assume_init(utils) }
+        };
+
         let mut y = [0; N];
-        y[0] = size[0];
+        y[0] = steps[0];
+
         GridSpace {
-            utils: unsafe { core::mem::MaybeUninit::array_assume_init(utils) },
-            steps: size,
+            utils,
+            steps,
             x: [0; N],
             y,
         }
@@ -86,17 +97,23 @@ impl<T: Linear, const N: usize> IntoGridSpace<[usize; N]> for RangeInclusive<[T;
 
 impl<T: Linear, const N: usize> IntoGridSpace<usize> for Range<[T; N]> {
     type GridSpace = GridSpace<T, N>;
-    fn into_grid_space(self, size: usize) -> Self::GridSpace {
+    fn into_grid_space(self, steps: usize) -> Self::GridSpace {
         let Self { start, end } = self;
-        let mut utils = core::mem::MaybeUninit::uninit_array();
-        for i in 0..N {
-            utils[i].write((start[i]..end[i], size).into());
-        }
+
+        let utils = {
+            let mut utils = core::mem::MaybeUninit::uninit_array();
+            for i in 0..N {
+                utils[i].write((start[i]..end[i], steps).into());
+            }
+            unsafe { core::mem::MaybeUninit::array_assume_init(utils) }
+        };
+
         let mut y = [0; N];
-        y[0] = size;
+        y[0] = steps;
+
         GridSpace {
-            utils: unsafe { core::mem::MaybeUninit::array_assume_init(utils) },
-            steps: [size; N],
+            utils,
+            steps: [steps; N],
             x: [0; N],
             y,
         }
@@ -105,17 +122,23 @@ impl<T: Linear, const N: usize> IntoGridSpace<usize> for Range<[T; N]> {
 
 impl<T: Linear, const N: usize> IntoGridSpace<usize> for RangeInclusive<[T; N]> {
     type GridSpace = GridSpace<T, N>;
-    fn into_grid_space(self, size: usize) -> Self::GridSpace {
+    fn into_grid_space(self, steps: usize) -> Self::GridSpace {
         let (start, end) = self.into_inner();
-        let mut utils = core::mem::MaybeUninit::uninit_array();
-        for i in 0..N {
-            utils[i].write((start[i]..=end[i], size).into());
-        }
+
+        let utils = {
+            let mut utils = core::mem::MaybeUninit::uninit_array();
+            for i in 0..N {
+                utils[i].write((start[i]..=end[i], steps).into());
+            }
+            unsafe { core::mem::MaybeUninit::array_assume_init(utils) }
+        };
+
         let mut y = [0; N];
-        y[0] = size;
+        y[0] = steps;
+
         GridSpace {
-            utils: unsafe { core::mem::MaybeUninit::array_assume_init(utils) },
-            steps: [size; N],
+            utils,
+            steps: [steps; N],
             x: [0; N],
             y,
         }
@@ -248,24 +271,108 @@ mod tests {
     }
 
     #[test]
+    fn test_grid_space_inclusive() {
+        let it = grid_space([0.0, 0.0]..=[1.0, 2.0], [3, 5]);
+        assert_eq_iter!(
+            it,
+            [
+                [0.0, 0.0],
+                [0.0, 0.5],
+                [0.0, 1.0],
+                [0.0, 1.5],
+                [0.0, 2.0],
+                [0.5, 0.0],
+                [0.5, 0.5],
+                [0.5, 1.0],
+                [0.5, 1.5],
+                [0.5, 2.0],
+                [1.0, 0.0],
+                [1.0, 0.5],
+                [1.0, 1.0],
+                [1.0, 1.5],
+                [1.0, 2.0]
+            ]
+        );
+    }
+
+    #[test]
+    fn test_grid_space_inclusive_rev() {
+        let it = grid_space([0.0, 0.0]..=[1.0, 2.0], [3, 5]);
+        assert_eq_iter!(
+            it.rev(),
+            [
+                [1.0, 2.0],
+                [1.0, 1.5],
+                [1.0, 1.0],
+                [1.0, 0.5],
+                [1.0, 0.0],
+                [0.5, 2.0],
+                [0.5, 1.5],
+                [0.5, 1.0],
+                [0.5, 0.5],
+                [0.5, 0.0],
+                [0.0, 2.0],
+                [0.0, 1.5],
+                [0.0, 1.0],
+                [0.0, 0.5],
+                [0.0, 0.0]
+            ]
+        );
+    }
+
+
+
+    #[test]
+    fn test_grid_space_exclusive_single() {
+        let it = grid_space([0.0, 0.0]..[1.0, 1.0], 2);
+        assert_eq_iter!(
+            it,
+            [
+                [0.0, 0.0],
+                [0.0, 0.5],
+                [0.5, 0.0],
+                [0.5, 0.5]
+            ]
+        );
+    }
+
+    #[test]
+    fn test_grid_space_inclusive_single() {
+        let it = grid_space([0.0, 0.0]..=[1.0, 1.0], 3);
+        assert_eq_iter!(
+            it,
+            [
+                [0.0, 0.0],
+                [0.0, 0.5],
+                [0.0, 1.0],
+                [0.5, 0.0],
+                [0.5, 0.5],
+                [0.5, 1.0],
+                [1.0, 0.0],
+                [1.0, 0.5],
+                [1.0, 1.0]
+            ]
+        );
+    }
+
+
+    #[test]
     fn test_grid_space_exclusive_len() {
         let mut it = grid_space([0.0, 0.0]..[1.0, 2.0], [2, 4]);
-        assert_eq!(it.len(), 8);
-        it.next();
-        assert_eq!(it.len(), 7);
-        it.next_back();
-        assert_eq!(it.len(), 6);
-        it.next();
-        assert_eq!(it.len(), 5);
-        it.next_back();
-        assert_eq!(it.len(), 4);
-        it.next();
-        assert_eq!(it.len(), 3);
-        it.next_back();
-        assert_eq!(it.len(), 2);
-        it.next();
-        assert_eq!(it.len(), 1);
-        it.next_back();
-        assert_eq!(it.len(), 0);
+
+        let mut expected_len = 2 * 4;
+
+        assert_eq!(it.size_hint(), (expected_len, Some(expected_len)));
+
+        while expected_len > 0 {
+            assert_eq!(it.len(), expected_len);
+            it.next();
+            expected_len -= 1;
+            assert_eq!(it.len(), expected_len);
+            it.next_back();
+            expected_len -= 1;
+        }
+
+        assert_eq!(it.len(), expected_len);
     }
 }
