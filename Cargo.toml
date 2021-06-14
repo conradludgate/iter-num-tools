@@ -1,6 +1,6 @@
 [package]
 name = "iter_num_tools"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["Conrad Ludgate <conradludgate@gmail.com>"]
 edition = "2018"
 description = "Create simple iterators over non integer ranges. itertools + num = iter_num_tools"
@@ -14,9 +14,9 @@ categories = ["algorithms", "rust-patterns", "no-std"]
 
 [dependencies]
 num-traits = { version = "0.2", default-features = false, features = ["libm"] }
-itertools = { version = "0.10", default-features = false }
 
 [dev-dependencies]
+itertools = { version = "0.10" }
 approx = "0.4"
 criterion = "0.3"
 
