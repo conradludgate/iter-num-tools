@@ -12,21 +12,21 @@ pub type ArangeGrid<T, const N: usize> = GridSpace<T, N>;
 /// use iter_num_tools::arange_grid;
 ///
 /// let it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
-/// assert!(it.eq(vec![
+/// assert!(it.eq([
 ///     [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
 ///     [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
 /// ]));
 ///
 /// // different step count in each direction
 /// let it = arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]);
-/// assert!(it.eq(vec![
+/// assert!(it.eq([
 ///     [0.0, 0.0], [0.0, 1.0],
 ///     [0.5, 0.0], [0.5, 1.0],
 /// ]));
 ///
 /// // even 3d spaces
 /// let it = arange_grid([0.0, 0.0, 0.0]..[2.0, 2.0, 2.0], 1.0);
-/// assert!(it.eq(vec![
+/// assert!(it.eq([
 ///     [0.0, 0.0, 0.0], [0.0, 0.0, 1.0],
 ///     [0.0, 1.0, 0.0], [0.0, 1.0, 1.0],
 ///

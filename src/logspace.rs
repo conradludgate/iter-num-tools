@@ -12,14 +12,14 @@ use num_traits::{real::Real, FromPrimitive};
 ///
 /// // Inclusive
 /// let it = log_space(1.0..=1000.0, 4);
-/// let expected: Vec<f64> = vec![1.0, 10.0, 100.0, 1000.0];
+/// let expected: [f64; 4] = [1.0, 10.0, 100.0, 1000.0];
 ///
 /// // all approx equal
 /// assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 ///
 /// // Exclusive
 /// let it = log_space(1.0..1000.0, 3);
-/// let expected: Vec<f64> = vec![1.0, 10.0, 100.0];
+/// let expected: [f64; 3] = [1.0, 10.0, 100.0];
 ///
 /// // all approx equal
 /// assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));

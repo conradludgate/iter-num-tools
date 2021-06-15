@@ -131,7 +131,7 @@ assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 There is already a project called [`itertools-num`](https://docs.rs/itertools-num/0.1.3/itertools_num/) which has quite a few downloads but it
 isn't optimised for speed or flexibility.
 
-(try this benchmark for yourself: clone the repo and run `cargo bench --bench "linspace"`)
+(try this benchmark for yourself: clone the repo and run `cargo bench --bench "linspace" --all-features`)
 
 ```
 LinSpace/linspace [1.0, 3.0] x100 (iter-num-tools)

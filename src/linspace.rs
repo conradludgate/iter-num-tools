@@ -165,19 +165,19 @@ mod tests {
     #[test]
     fn test_lin_space_inclusive() {
         let it = lin_space(1.0..=5.0, 5);
-        itertools::assert_equal(it, [1.0, 2.0, 3.0, 4.0, 5.0]);
+        assert!(it.eq([1.0, 2.0, 3.0, 4.0, 5.0]))
     }
 
     #[test]
     fn test_lin_space_exclusive() {
         let it = lin_space(0.0..5.0, 5);
-        itertools::assert_equal(it, [0.0, 1.0, 2.0, 3.0, 4.0]);
+        assert!(it.eq([0.0, 1.0, 2.0, 3.0, 4.0]));
     }
 
     #[test]
     fn test_lin_space_exclusive_rev() {
         let it = lin_space(0.0..5.0, 5).rev();
-        itertools::assert_equal(it, [4.0, 3.0, 2.0, 1.0, 0.0]);
+        assert!(it.eq([4.0, 3.0, 2.0, 1.0, 0.0]));
     }
 
     #[test]
