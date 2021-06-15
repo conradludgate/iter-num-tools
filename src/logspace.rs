@@ -12,14 +12,14 @@ use num_traits::{real::Real, FromPrimitive};
 ///
 /// // Inclusive
 /// let it = log_space(1.0..=1000.0, 4);
-/// let expected: [f64; 4] = [1.0, 10.0, 100.0, 1000.0];
+/// let expected: Vec<f64> = vec![1.0, 10.0, 100.0, 1000.0];
 ///
 /// // all approx equal
 /// assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 ///
 /// // Exclusive
 /// let it = log_space(1.0..1000.0, 3);
-/// let expected: [f64; 3] = [1.0, 10.0, 100.0];
+/// let expected: Vec<f64> = vec![1.0, 10.0, 100.0];
 ///
 /// // all approx equal
 /// assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
@@ -170,25 +170,25 @@ mod tests {
     #[test]
     fn test_log_space_inclusive() {
         let it = log_space(1.0..=1000.0, 4);
-        assert!(zip_eq(it, [1.0, 10.0, 100.0, 1000.0]).all(|(a, b)| (a - b).abs() < 1e-10))
+        assert!(zip_eq(it, vec![1.0, 10.0, 100.0, 1000.0]).all(|(a, b)| (a - b).abs() < 1e-10))
     }
 
     #[test]
     fn test_log_space_exclusive() {
         let it = log_space(1.0..1000.0, 3);
-        assert!(zip_eq(it, [1.0, 10.0, 100.0]).all(|(a, b)| (a - b).abs() < 1e-10))
+        assert!(zip_eq(it, vec![1.0, 10.0, 100.0]).all(|(a, b)| (a - b).abs() < 1e-10))
     }
 
     #[test]
     fn test_log_space_inclusive_rev() {
         let it = log_space(1.0..=1000.0, 4);
-        assert!(zip_eq(it.rev(), [1000.0, 100.0, 10.0, 1.0]).all(|(a, b)| (a - b).abs() < 1e-10))
+        assert!(zip_eq(it.rev(), vec![1000.0, 100.0, 10.0, 1.0]).all(|(a, b)| (a - b).abs() < 1e-10))
     }
 
     #[test]
     fn test_log_space_exclusive_rev() {
         let it = log_space(1.0..1000.0, 3);
-        assert!(zip_eq(it.rev(), [100.0, 10.0, 1.0]).all(|(a, b)| (a - b).abs() < 1e-10))
+        assert!(zip_eq(it.rev(), vec![100.0, 10.0, 1.0]).all(|(a, b)| (a - b).abs() < 1e-10))
     }
 
     #[test]

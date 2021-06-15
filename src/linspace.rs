@@ -10,11 +10,11 @@ use num_traits::FromPrimitive;
 ///
 /// // Inclusive
 /// let it = lin_space(20.0..=21.0, 3);
-/// assert!(it.eq([20.0, 20.5, 21.0]));
+/// assert!(it.eq(vec![20.0, 20.5, 21.0]));
 ///
 /// // Exclusive
 /// let it = lin_space(20.0..21.0, 2);
-/// assert!(it.eq([20.0, 20.5]));
+/// assert!(it.eq(vec![20.0, 20.5]));
 /// ```
 #[inline]
 pub fn lin_space<R, T>(range: R, steps: usize) -> LinSpace<T>
@@ -165,19 +165,19 @@ mod tests {
     #[test]
     fn test_lin_space_inclusive() {
         let it = lin_space(1.0..=5.0, 5);
-        assert!(it.eq([1.0, 2.0, 3.0, 4.0, 5.0]))
+        assert!(it.eq(vec![1.0, 2.0, 3.0, 4.0, 5.0]))
     }
 
     #[test]
     fn test_lin_space_exclusive() {
         let it = lin_space(0.0..5.0, 5);
-        assert!(it.eq([0.0, 1.0, 2.0, 3.0, 4.0]));
+        assert!(it.eq(vec![0.0, 1.0, 2.0, 3.0, 4.0]));
     }
 
     #[test]
     fn test_lin_space_exclusive_rev() {
         let it = lin_space(0.0..5.0, 5).rev();
-        assert!(it.eq([4.0, 3.0, 2.0, 1.0, 0.0]));
+        assert!(it.eq(vec![4.0, 3.0, 2.0, 1.0, 0.0]));
     }
 
     #[test]

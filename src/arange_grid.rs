@@ -1,6 +1,6 @@
 use crate::{arange::arange_lerp, gridspace::GridSpace, linspace::Linear};
-use core::ops::Range;
 use array_init::array_init;
+use core::ops::Range;
 use num_traits::real::Real;
 
 /// Iterator returned by `arange_grid`
@@ -12,21 +12,21 @@ pub type ArangeGrid<T, const N: usize> = GridSpace<T, N>;
 /// use iter_num_tools::arange_grid;
 ///
 /// let it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
-/// assert!(it.eq([
+/// assert!(it.eq(vec![
 ///     [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
 ///     [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
 /// ]));
 ///
 /// // different step count in each direction
 /// let it = arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]);
-/// assert!(it.eq([
+/// assert!(it.eq(vec![
 ///     [0.0, 0.0], [0.0, 1.0],
 ///     [0.5, 0.0], [0.5, 1.0],
 /// ]));
 ///
 /// // even 3d spaces
 /// let it = arange_grid([0.0, 0.0, 0.0]..[2.0, 2.0, 2.0], 1.0);
-/// assert!(it.eq([
+/// assert!(it.eq(vec![
 ///     [0.0, 0.0, 0.0], [0.0, 0.0, 1.0],
 ///     [0.0, 1.0, 0.0], [0.0, 1.0, 1.0],
 ///
@@ -100,33 +100,22 @@ mod tests {
     #[test]
     fn test_arange_grid_exclusive() {
         let it = arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]);
-        itertools::assert_equal(
-            it,
-            [
-                [0.0, 0.0],
-                [0.0, 1.0],
-                [0.5, 0.0],
-                [0.5, 1.0]
-            ]
-        );
+        assert!(it.eq(vec![[0.0, 0.0], [0.0, 1.0], [0.5, 0.0], [0.5, 1.0]]));
     }
 
     #[test]
     fn test_arange_grid_exclusive_rev() {
         let it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
-        itertools::assert_equal(
-            it.rev(),
-            [
-                [0.5, 1.5],
-                [0.5, 1.0],
-                [0.5, 0.5],
-                [0.5, 0.0],
-                [0.0, 1.5],
-                [0.0, 1.0],
-                [0.0, 0.5],
-                [0.0, 0.0]
-            ]
-        );
+        assert!(it.rev().eq(vec![
+            [0.5, 1.5],
+            [0.5, 1.0],
+            [0.5, 0.5],
+            [0.5, 0.0],
+            [0.0, 1.5],
+            [0.0, 1.0],
+            [0.0, 0.5],
+            [0.0, 0.0],
+        ]));
     }
 
     #[test]

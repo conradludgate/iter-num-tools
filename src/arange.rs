@@ -12,7 +12,7 @@ pub type Arange<T> = LinSpace<T>;
 /// use iter_num_tools::arange;
 ///
 /// let it = arange(0.0..2.0, 0.5);
-/// assert!(it.eq([0.0, 0.5, 1.0, 1.5]));
+/// assert!(it.eq(vec![0.0, 0.5, 1.0, 1.5]));
 /// ```
 pub fn arange<R, F>(range: R, step: F) -> Arange<F>
 where
@@ -54,6 +54,6 @@ mod tests {
     #[test]
     fn test_arange() {
         let it = arange(0.0..2.0, 0.5);
-        itertools::assert_equal(it, [0.0, 0.5, 1.0, 1.5]);
+        assert!(it.eq(vec![0.0, 0.5, 1.0, 1.5]));
     }
 }
