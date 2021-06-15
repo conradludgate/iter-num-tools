@@ -126,6 +126,43 @@ impl<T: Linear> Iterator for LinSpace<T> {
         }
     }
 
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.len()
+    }
+
+    fn last(mut self) -> Option<Self::Item>
+    where
+        Self: Sized,
+    {
+        self.next_back()
+    }
+
+    #[cfg(feature = "advanced_by")]
+    fn advance_by(&mut self, n: usize) -> Result<(), usize> {
+        let diff = self.steps - self.x;
+        if diff < n {
+            self.x = self.steps;
+            Err(diff)
+        } else {
+            self.x += n;
+            Ok(())
+        }
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        if self.steps - self.x < n {
+            self.x = self.steps;
+            None
+        } else {
+            self.x += n;
+            let n = self.x + 1;
+            Some(self.util.lerp(core::mem::replace(&mut self.x, n)))
+        }
+    }
+
     fn size_hint(&self) -> (usize, Option<usize>) {
         let len = self.len();
         (len, Some(len))

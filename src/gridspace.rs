@@ -54,13 +54,15 @@ impl<T: Linear, const N: usize> IntoGridSpace<T, [usize; N], N> for Range<[T; N]
 
         let utils = array_init(|i| (start[i]..end[i], steps[i]).into());
 
-        let mut y = [0; N];
-        y[0] = steps[0];
+        let mut y = steps[0];
+        for i in 1..N {
+            y *= steps[i];
+        }
 
         GridSpace {
             lerps: utils,
             steps,
-            x: [0; N],
+            x: 0,
             y,
         }
     }
@@ -72,13 +74,15 @@ impl<T: Linear, const N: usize> IntoGridSpace<T, [usize; N], N> for RangeInclusi
 
         let utils = array_init(|i| (start[i]..=end[i], steps[i]).into());
 
-        let mut y = [0; N];
-        y[0] = steps[0];
+        let mut y = steps[0];
+        for i in 1..N {
+            y *= steps[i];
+        }
 
         GridSpace {
             lerps: utils,
             steps,
-            x: [0; N],
+            x: 0,
             y,
         }
     }
@@ -90,14 +94,11 @@ impl<T: Linear, const N: usize> IntoGridSpace<T, usize, N> for Range<[T; N]> {
 
         let utils = array_init(|i| (start[i]..end[i], steps).into());
 
-        let mut y = [0; N];
-        y[0] = steps;
-
         GridSpace {
             lerps: utils,
             steps: [steps; N],
-            x: [0; N],
-            y,
+            x: 0,
+            y: steps.pow(N as u32),
         }
     }
 }
@@ -108,14 +109,11 @@ impl<T: Linear, const N: usize> IntoGridSpace<T, usize, N> for RangeInclusive<[T
 
         let utils = array_init(|i| (start[i]..=end[i], steps).into());
 
-        let mut y = [0; N];
-        y[0] = steps;
-
         GridSpace {
             lerps: utils,
             steps: [steps; N],
-            x: [0; N],
-            y,
+            x: 0,
+            y: steps.pow(N as u32),
         }
     }
 }
@@ -125,19 +123,17 @@ impl<T: Linear, const N: usize> IntoGridSpace<T, usize, N> for RangeInclusive<[T
 pub struct GridSpace<T, const N: usize> {
     pub(crate) lerps: [Lerp<T>; N],
     pub(crate) steps: [usize; N],
-    pub(crate) x: [usize; N],
-    pub(crate) y: [usize; N],
+    pub(crate) x: usize,
+    pub(crate) y: usize,
 }
 
-fn inc<const N: usize>(mut n: [usize; N], max: &[usize; N]) -> [usize; N] {
-    n[N - 1] += 1;
-    let mut i = N - 1;
-    while i > 0 && n[i] == max[i] {
-        n[i] = 0;
-        i -= 1;
-        n[i] += 1;
+fn get_indices<const N: usize>(mut i: usize, max: &[usize; N]) -> [usize; N] {
+    let mut output = [0; N];
+    for j in (0..N).rev() {
+        output[j] = i % max[j];
+        i /= max[j]
     }
-    n
+    output
 }
 
 impl<T: Linear, const N: usize> Iterator for GridSpace<T, N> {
@@ -146,12 +142,49 @@ impl<T: Linear, const N: usize> Iterator for GridSpace<T, N> {
     fn next(&mut self) -> Option<Self::Item> {
         let Self { lerps, steps, x, y } = self;
 
-        if (*x).lt(y) {
-            let n = inc(*x, steps);
-            let n = core::mem::replace(x, n);
+        if x < y {
+            let n = *x + 1;
+            let n = get_indices(core::mem::replace(x, n), steps);
             Some(array_init(|i| lerps[i].lerp(n[i])))
         } else {
             None
+        }
+    }
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.len()
+    }
+
+    fn last(mut self) -> Option<Self::Item>
+    where
+        Self: Sized,
+    {
+        self.next_back()
+    }
+
+    #[cfg(feature = "advanced_by")]
+    fn advance_by(&mut self, n: usize) -> Result<(), usize> {
+        let diff = self.y - self.x;
+        if diff < n {
+            self.x = self.y;
+            Err(diff)
+        } else {
+            self.x += n;
+            Ok(())
+        }
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        if self.y - self.x < n {
+            self.x = self.y;
+            None
+        } else {
+            let indices = get_indices(self.x + n, &self.steps);
+            self.x += n + 1;
+            Some(array_init(|i| self.lerps[i].lerp(indices[i])))
         }
     }
 
@@ -161,22 +194,14 @@ impl<T: Linear, const N: usize> Iterator for GridSpace<T, N> {
     }
 }
 
-fn dec<const N: usize>(n: &mut [usize; N], max: &[usize; N]) {
-    let mut i = N - 1;
-    while i > 0 && n[i] == 0 {
-        n[i] = max[i] - 1;
-        i -= 1;
-    }
-    n[i] -= 1;
-}
-
 impl<T: Linear, const N: usize> DoubleEndedIterator for GridSpace<T, N> {
     fn next_back(&mut self) -> Option<Self::Item> {
         let Self { lerps, steps, x, y } = self;
 
-        if (*x).lt(y) {
-            dec(y, steps);
-            Some(array_init(|i| lerps[i].lerp(y[i])))
+        if x < y {
+            *y -= 1;
+            let n = get_indices(*y, steps);
+            Some(array_init(|i| lerps[i].lerp(n[i])))
         } else {
             None
         }
@@ -186,13 +211,7 @@ impl<T: Linear, const N: usize> DoubleEndedIterator for GridSpace<T, N> {
 impl<T: Linear, const N: usize> ExactSizeIterator for GridSpace<T, N> {
     #[inline]
     fn len(&self) -> usize {
-        let mut x = self.x[0];
-        let mut y = self.y[0];
-        for i in 1..N {
-            x = x * self.steps[i] + self.x[i];
-            y = y * self.steps[i] + self.y[i];
-        }
-        y - x
+        self.y - self.x
     }
 }
 

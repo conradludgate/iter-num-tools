@@ -52,19 +52,18 @@ impl<F: Real + Linear, const N: usize> IntoArangeGrid<F, [F; N], N> for Range<[F
         let Self { start, end } = self;
 
         let mut steps = [0; N];
+        let mut y = 1;
         let utils = array_init(|i| {
             let (util, s) = arange_lerp(start[i]..end[i], step[i]);
             steps[i] = s;
+            y *= s;
             util
         });
-
-        let mut y = [0; N];
-        y[0] = steps[0];
 
         ArangeGrid {
             lerps: utils,
             steps,
-            x: [0; N],
+            x: 0,
             y,
         }
     }
@@ -75,19 +74,18 @@ impl<F: Real + Linear, const N: usize> IntoArangeGrid<F, F, N> for Range<[F; N]>
         let Self { start, end } = self;
 
         let mut steps = [0; N];
+        let mut y = 1;
         let utils = array_init(|i| {
             let (util, s) = arange_lerp(start[i]..end[i], step);
             steps[i] = s;
+            y *= s;
             util
         });
-
-        let mut y = [0; N];
-        y[0] = steps[0];
 
         ArangeGrid {
             lerps: utils,
             steps,
-            x: [0; N],
+            x: 0,
             y,
         }
     }
