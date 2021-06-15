@@ -14,21 +14,21 @@ fn lin_space_std(start: f64, end: f64, steps: usize) -> impl Iterator<Item = f64
 pub fn bench_lin_space(c: &mut Criterion) {
     let mut group = c.benchmark_group("LinSpace");
 
-    group.bench_function("linspace [1.0, 3.0] x100 (iter-num-tools)", |b| {
+    group.bench_function("linspace [1.0, 100.0] x100 (iter-num-tools)", |b| {
         b.iter(|| {
-            bench(lin_space(1.0..=3.0, 100))
+            bench(lin_space(1.0..=100.0, 100))
         })
     });
 
-    group.bench_function("linspace [1.0, 3.0] x100 (std)", |b| {
+    group.bench_function("linspace [1.0, 100.0] x100 (std)", |b| {
         b.iter(|| {
-            bench(lin_space_std(1.0, 3.0, 100))
+            bench(lin_space_std(1.0, 100.0, 100))
         })
     });
 
-    group.bench_function("linspace [1.0, 3.0] x100 (itertools-num)", |b| {
+    group.bench_function("linspace [1.0, 100.0] x100 (itertools-num)", |b| {
         b.iter(|| {
-            bench(itertools_num::linspace(1.0, 3.0, 100))
+            bench(itertools_num::linspace(1.0, 100.0, 100))
         })
     });
 

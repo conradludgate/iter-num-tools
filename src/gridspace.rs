@@ -2,7 +2,7 @@ use array_init::array_init;
 
 use crate::linspace::{Lerp, Linear};
 use core::{
-    iter::{FusedIterator, TrustedLen},
+    iter::FusedIterator,
     ops::{Range, RangeInclusive},
 };
 
@@ -12,28 +12,28 @@ use core::{
 /// use iter_num_tools::grid_space;
 ///
 /// let it = grid_space([0.0, 0.0]..[1.0, 2.0], [2, 4]);
-/// itertools::assert_equal(it, vec![
+/// assert!(it.eq([
 ///     [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
 ///     [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
-/// ]);
+/// ]));
 ///
 /// // inclusive and with a single step count
 /// let it = grid_space([0.0, 0.0]..=[1.0, 2.0], 3);
-/// itertools::assert_equal(it, vec![
+/// assert!(it.eq([
 ///     [0.0, 0.0], [0.0, 1.0], [0.0, 2.0],
 ///     [0.5, 0.0], [0.5, 1.0], [0.5, 2.0],
 ///     [1.0, 0.0], [1.0, 1.0], [1.0, 2.0],
-/// ]);
+/// ]));
 ///
 /// // even 3d spaces
 /// let it = grid_space([0, 0, 0]..=[1, 1, 1], 2);
-/// itertools::assert_equal(it, vec![
+/// assert!(it.eq([
 ///     [0, 0, 0], [0, 0, 1],
 ///     [0, 1, 0], [0, 1, 1],
 ///
 ///     [1, 0, 0], [1, 0, 1],
 ///     [1, 1, 0], [1, 1, 1],
-/// ]);
+/// ]));
 /// ```
 pub fn grid_space<T, R, S, const N: usize>(range: R, steps: S) -> GridSpace<T, N>
 where
@@ -197,6 +197,10 @@ impl<T: Linear, const N: usize> ExactSizeIterator for GridSpace<T, N> {
 }
 
 impl<T: Linear, const N: usize> FusedIterator for GridSpace<T, N> {}
+
+#[cfg(feature = "trusted_len")]
+use core::iter::TrustedLen;
+#[cfg(feature = "trusted_len")]
 unsafe impl<T: Linear, const N: usize> TrustedLen for GridSpace<T, N> {}
 
 #[cfg(test)]
@@ -216,8 +220,8 @@ mod tests {
                 [0.5, 0.0],
                 [0.5, 0.5],
                 [0.5, 1.0],
-                [0.5, 1.5]
-            ]
+                [0.5, 1.5],
+            ],
         );
     }
 
@@ -234,8 +238,8 @@ mod tests {
                 [0.0, 1.5],
                 [0.0, 1.0],
                 [0.0, 0.5],
-                [0.0, 0.0]
-            ]
+                [0.0, 0.0],
+            ],
         );
     }
 
@@ -259,8 +263,8 @@ mod tests {
                 [1.0, 0.5],
                 [1.0, 1.0],
                 [1.0, 1.5],
-                [1.0, 2.0]
-            ]
+                [1.0, 2.0],
+            ],
         );
     }
 
@@ -284,8 +288,8 @@ mod tests {
                 [0.0, 1.5],
                 [0.0, 1.0],
                 [0.0, 0.5],
-                [0.0, 0.0]
-            ]
+                [0.0, 0.0],
+            ],
         );
     }
 
@@ -309,8 +313,8 @@ mod tests {
                 [0.5, 1.0],
                 [1.0, 0.0],
                 [1.0, 0.5],
-                [1.0, 1.0]
-            ]
+                [1.0, 1.0],
+            ],
         );
     }
 

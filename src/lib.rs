@@ -1,8 +1,5 @@
 #![deny(missing_docs)]
-#![allow(incomplete_features)]
-#![feature(impl_trait_in_bindings)]
-#![feature(min_type_alias_impl_trait)]
-#![feature(trusted_len)]
+#![cfg_attr(feature = "trusted_len", feature(trusted_len))]
 //! `iter_num_tools` is a collection if iterator extensions that
 //! make heavy use of number properties.
 //! Mostly extending on [Range](std::ops::Range).

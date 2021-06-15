@@ -16,6 +16,9 @@ categories = ["algorithms", "rust-patterns", "no-std"]
 num-traits = { version = "0.2", default-features = false, features = ["libm"] }
 array-init = "2.0.0"
 
+[features]
+trusted_len = []
+
 [dev-dependencies]
 itertools = "0.10"
 itertools-num = "0.1.3"

@@ -10,30 +10,29 @@ pub type ArangeGrid<T, const N: usize> = GridSpace<T, N>;
 ///
 /// ```
 /// use iter_num_tools::arange_grid;
-/// use itertools::Itertools;
 ///
 /// let it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
-/// itertools::assert_equal(it, vec![
+/// assert!(it.eq(vec![
 ///     [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
 ///     [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
-/// ]);
+/// ]));
 ///
 /// // different step count in each direction
 /// let it = arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]);
-/// itertools::assert_equal(it, vec![
+/// assert!(it.eq(vec![
 ///     [0.0, 0.0], [0.0, 1.0],
 ///     [0.5, 0.0], [0.5, 1.0],
-/// ]);
+/// ]));
 ///
 /// // even 3d spaces
 /// let it = arange_grid([0.0, 0.0, 0.0]..[2.0, 2.0, 2.0], 1.0);
-/// itertools::assert_equal(it, vec![
+/// assert!(it.eq(vec![
 ///     [0.0, 0.0, 0.0], [0.0, 0.0, 1.0],
 ///     [0.0, 1.0, 0.0], [0.0, 1.0, 1.0],
 ///
 ///     [1.0, 0.0, 0.0], [1.0, 0.0, 1.0],
 ///     [1.0, 1.0, 0.0], [1.0, 1.0, 1.0],
-/// ]);
+/// ]));
 /// ```
 pub fn arange_grid<F, R, S, const N: usize>(range: R, step: S) -> ArangeGrid<F, N>
 where

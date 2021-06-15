@@ -1,5 +1,5 @@
 // use crate::{lerp::LinSpaceFn, map::Map};
-use core::iter::{FusedIterator, TrustedLen};
+use core::iter::FusedIterator;
 use core::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
 use num_traits::FromPrimitive;
 
@@ -7,15 +7,14 @@ use num_traits::FromPrimitive;
 ///
 /// ```
 /// use iter_num_tools::lin_space;
-/// use itertools::Itertools;
 ///
 /// // Inclusive
 /// let it = lin_space(20.0..=21.0, 3);
-/// itertools::assert_equal(it, [20.0, 20.5, 21.0]);
+/// assert!(it.eq([20.0, 20.5, 21.0]));
 ///
 /// // Exclusive
 /// let it = lin_space(20.0..21.0, 2);
-/// itertools::assert_equal(it, [20.0, 20.5]);
+/// assert!(it.eq([20.0, 20.5]));
 /// ```
 #[inline]
 pub fn lin_space<R, T>(range: R, steps: usize) -> LinSpace<T>
@@ -153,6 +152,10 @@ impl<T: Linear> ExactSizeIterator for LinSpace<T> {
 }
 
 impl<T: Linear> FusedIterator for LinSpace<T> {}
+
+#[cfg(feature = "trusted_len")]
+use core::iter::TrustedLen;
+#[cfg(feature = "trusted_len")]
 unsafe impl<T: Linear> TrustedLen for LinSpace<T> {}
 
 #[cfg(test)]
