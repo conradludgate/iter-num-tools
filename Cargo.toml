@@ -1,6 +1,6 @@
 [package]
 name = "iter_num_tools"
-version = "0.4.4"
+version = "0.4.5"
 authors = ["Conrad Ludgate <conradludgate@gmail.com>"]
 edition = "2018"
 description = "Create simple iterators over non integer ranges. itertools + num = iter_num_tools"
@@ -17,7 +17,8 @@ num-traits = { version = "0.2", default-features = false, features = ["libm"] }
 array-init = "2.0.0"
 
 [dev-dependencies]
-itertools = { version = "0.10" }
+itertools = "0.10"
+itertools-num = "0.1.3"
 criterion = "0.3"
 
 [[bench]]
