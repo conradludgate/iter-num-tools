@@ -121,6 +121,7 @@ mod arange_grid;
 mod gridspace;
 mod linspace;
 mod logspace;
+mod space;
 
 pub use arange::{arange, Arange, IntoArange};
 pub use arange_grid::{arange_grid, ArangeGrid, IntoArangeGrid};

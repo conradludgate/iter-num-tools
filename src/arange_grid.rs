@@ -1,4 +1,4 @@
-use crate::{arange::arange_lerp, gridspace::GridSpace, linspace::Linear};
+use crate::{arange::arange_lerp, gridspace::{GridSpace, GridSpaceInterpolation}, linspace::Linear};
 use array_init::array_init;
 use core::ops::Range;
 use num_traits::real::Real;
@@ -53,19 +53,14 @@ impl<F: Real + Linear, const N: usize> IntoArangeGrid<F, [F; N], N> for Range<[F
 
         let mut steps = [0; N];
         let mut y = 1;
-        let utils = array_init(|i| {
-            let (util, s) = arange_lerp(start[i]..end[i], step[i]);
+        let lerps = array_init(|i| {
+            let (lerp, s) = arange_lerp(start[i]..end[i], step[i]);
             steps[i] = s;
             y *= s;
-            util
+            lerp
         });
 
-        ArangeGrid {
-            lerps: utils,
-            steps,
-            x: 0,
-            y,
-        }
+        ArangeGrid::new(y, GridSpaceInterpolation(lerps, steps))
     }
 }
 
@@ -75,19 +70,14 @@ impl<F: Real + Linear, const N: usize> IntoArangeGrid<F, F, N> for Range<[F; N]>
 
         let mut steps = [0; N];
         let mut y = 1;
-        let utils = array_init(|i| {
-            let (util, s) = arange_lerp(start[i]..end[i], step);
+        let lerps = array_init(|i| {
+            let (lerp, s) = arange_lerp(start[i]..end[i], step);
             steps[i] = s;
             y *= s;
-            util
+            lerp
         });
 
-        ArangeGrid {
-            lerps: utils,
-            steps,
-            x: 0,
-            y,
-        }
+        ArangeGrid::new(y, GridSpaceInterpolation(lerps, steps))
     }
 }
 

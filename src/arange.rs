@@ -1,4 +1,4 @@
-use crate::linspace::{Lerp, LinSpace, Linear};
+use crate::linspace::{LinSpace, Linear, LinearInterpolation};
 use core::ops::Range;
 use num_traits::real::Real;
 
@@ -23,26 +23,23 @@ where
 }
 
 /// Used by [`arange`]
-pub trait IntoArange<F> {
+pub trait IntoArange<F: Real + Linear> {
     /// Convert self into an [`Arange`]
     fn into_arange(self, step: F) -> Arange<F>;
 }
 
 impl<F: Real + Linear> IntoArange<F> for Range<F> {
     fn into_arange(self, step: F) -> Arange<F> {
-        let (util, steps) = arange_lerp(self, step);
-        Arange { x: 0, steps, util }
+        let (interpolate, steps) = arange_lerp(self, step);
+        LinSpace::new(steps, interpolate)
     }
 }
 
-pub fn arange_lerp<F>(range: Range<F>, step: F) -> (Lerp<F>, usize)
-where
-    F: Real + Linear,
-{
+pub fn arange_lerp<F: Real + Linear>(range: Range<F>, step: F) -> (LinearInterpolation<F>, usize) {
     let Range { start, end } = range;
 
     (
-        Lerp { start, step },
+        LinearInterpolation { start, step },
         ((end - start) / step).ceil().to_usize().unwrap(),
     )
 }

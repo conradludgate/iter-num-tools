@@ -1,10 +1,10 @@
 use array_init::array_init;
 
-use crate::linspace::{Lerp, Linear};
-use core::{
-    iter::FusedIterator,
-    ops::{Range, RangeInclusive},
+use crate::{
+    linspace::{Linear, LinearInterpolation},
+    space::{Interpolate, Space},
 };
+use core::ops::{Range, RangeInclusive};
 
 /// Creates a linear grid space over range with a fixed number of width and height steps
 ///
@@ -52,19 +52,14 @@ impl<T: Linear, const N: usize> IntoGridSpace<T, [usize; N], N> for Range<[T; N]
     fn into_grid_space(self, steps: [usize; N]) -> GridSpace<T, N> {
         let Self { start, end } = self;
 
-        let utils = array_init(|i| (start[i]..end[i], steps[i]).into());
+        let lerps = array_init(|i| (start[i]..end[i], steps[i]).into());
 
         let mut y = steps[0];
         for i in 1..N {
             y *= steps[i];
         }
 
-        GridSpace {
-            lerps: utils,
-            steps,
-            x: 0,
-            y,
-        }
+        GridSpace::new(y, GridSpaceInterpolation(lerps, steps))
     }
 }
 
@@ -72,19 +67,14 @@ impl<T: Linear, const N: usize> IntoGridSpace<T, [usize; N], N> for RangeInclusi
     fn into_grid_space(self, steps: [usize; N]) -> GridSpace<T, N> {
         let (start, end) = self.into_inner();
 
-        let utils = array_init(|i| (start[i]..=end[i], steps[i]).into());
+        let lerps = array_init(|i| (start[i]..=end[i], steps[i]).into());
 
         let mut y = steps[0];
         for i in 1..N {
             y *= steps[i];
         }
 
-        GridSpace {
-            lerps: utils,
-            steps,
-            x: 0,
-            y,
-        }
+        GridSpace::new(y, GridSpaceInterpolation(lerps, steps))
     }
 }
 
@@ -92,14 +82,12 @@ impl<T: Linear, const N: usize> IntoGridSpace<T, usize, N> for Range<[T; N]> {
     fn into_grid_space(self, steps: usize) -> GridSpace<T, N> {
         let Self { start, end } = self;
 
-        let utils = array_init(|i| (start[i]..end[i], steps).into());
+        let lerps = array_init(|i| (start[i]..end[i], steps).into());
 
-        GridSpace {
-            lerps: utils,
-            steps: [steps; N],
-            x: 0,
-            y: steps.pow(N as u32),
-        }
+        GridSpace::new(
+            steps.pow(N as u32),
+            GridSpaceInterpolation(lerps, [steps; N]),
+        )
     }
 }
 
@@ -107,120 +95,34 @@ impl<T: Linear, const N: usize> IntoGridSpace<T, usize, N> for RangeInclusive<[T
     fn into_grid_space(self, steps: usize) -> GridSpace<T, N> {
         let (start, end) = self.into_inner();
 
-        let utils = array_init(|i| (start[i]..=end[i], steps).into());
+        let lerps = array_init(|i| (start[i]..=end[i], steps).into());
 
-        GridSpace {
-            lerps: utils,
-            steps: [steps; N],
-            x: 0,
-            y: steps.pow(N as u32),
+        GridSpace::new(
+            steps.pow(N as u32),
+            GridSpaceInterpolation(lerps, [steps; N]),
+        )
+    }
+}
+
+pub struct GridSpaceInterpolation<T, const N: usize>(pub [LinearInterpolation<T>; N], pub [usize; N]);
+
+impl<T, const N: usize> Interpolate for GridSpaceInterpolation<T, N>
+where
+    LinearInterpolation<T>: Interpolate<Item = T>,
+{
+    type Item = [T; N];
+    fn interpolate(&self, mut x: usize) -> [T; N] {
+        let mut indices = [0; N];
+        for j in (0..N).rev() {
+            indices[j] = x % self.1[j];
+            x /= self.1[j]
         }
+        array_init(|i| self.0[i].interpolate(indices[i]))
     }
 }
 
 /// Iterator returned by [`grid_space`]
-#[derive(Clone, Debug)]
-pub struct GridSpace<T, const N: usize> {
-    pub(crate) lerps: [Lerp<T>; N],
-    pub(crate) steps: [usize; N],
-    pub(crate) x: usize,
-    pub(crate) y: usize,
-}
-
-fn get_indices<const N: usize>(mut i: usize, max: &[usize; N]) -> [usize; N] {
-    let mut output = [0; N];
-    for j in (0..N).rev() {
-        output[j] = i % max[j];
-        i /= max[j]
-    }
-    output
-}
-
-impl<T: Linear, const N: usize> Iterator for GridSpace<T, N> {
-    type Item = [T; N];
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let Self { lerps, steps, x, y } = self;
-
-        if x < y {
-            let n = *x + 1;
-            let n = get_indices(core::mem::replace(x, n), steps);
-            Some(array_init(|i| lerps[i].lerp(n[i])))
-        } else {
-            None
-        }
-    }
-
-    fn count(self) -> usize
-    where
-        Self: Sized,
-    {
-        self.len()
-    }
-
-    fn last(mut self) -> Option<Self::Item>
-    where
-        Self: Sized,
-    {
-        self.next_back()
-    }
-
-    #[cfg(feature = "advanced_by")]
-    fn advance_by(&mut self, n: usize) -> Result<(), usize> {
-        let diff = self.y - self.x;
-        if diff < n {
-            self.x = self.y;
-            Err(diff)
-        } else {
-            self.x += n;
-            Ok(())
-        }
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        if self.y - self.x < n {
-            self.x = self.y;
-            None
-        } else {
-            let indices = get_indices(self.x + n, &self.steps);
-            self.x += n + 1;
-            Some(array_init(|i| self.lerps[i].lerp(indices[i])))
-        }
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let len = self.len();
-        (len, Some(len))
-    }
-}
-
-impl<T: Linear, const N: usize> DoubleEndedIterator for GridSpace<T, N> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        let Self { lerps, steps, x, y } = self;
-
-        if x < y {
-            *y -= 1;
-            let n = get_indices(*y, steps);
-            Some(array_init(|i| lerps[i].lerp(n[i])))
-        } else {
-            None
-        }
-    }
-}
-
-impl<T: Linear, const N: usize> ExactSizeIterator for GridSpace<T, N> {
-    #[inline]
-    fn len(&self) -> usize {
-        self.y - self.x
-    }
-}
-
-impl<T: Linear, const N: usize> FusedIterator for GridSpace<T, N> {}
-
-#[cfg(feature = "trusted_len")]
-use core::iter::TrustedLen;
-#[cfg(feature = "trusted_len")]
-unsafe impl<T: Linear, const N: usize> TrustedLen for GridSpace<T, N> {}
+pub type GridSpace<T, const N: usize> = Space<GridSpaceInterpolation<T, N>>;
 
 #[cfg(test)]
 mod tests {

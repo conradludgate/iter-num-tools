@@ -1,5 +1,4 @@
-// use crate::{lerp::LinSpaceFn, map::Map};
-use core::iter::FusedIterator;
+use crate::space::{Interpolate, Space};
 use core::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
 use num_traits::FromPrimitive;
 
@@ -30,29 +29,13 @@ pub trait IntoLinSpace<T> {
     fn into_lin_space(self, steps: usize) -> LinSpace<T>;
 }
 
-impl<T> IntoLinSpace<T> for RangeInclusive<T>
+impl<T, R> IntoLinSpace<T> for R
 where
     T: Linear,
+    (R, usize): Into<LinearInterpolation<T>>,
 {
     fn into_lin_space(self, steps: usize) -> LinSpace<T> {
-        LinSpace {
-            x: 0,
-            steps,
-            util: (self, steps).into(),
-        }
-    }
-}
-
-impl<T> IntoLinSpace<T> for Range<T>
-where
-    T: Linear,
-{
-    fn into_lin_space(self, steps: usize) -> LinSpace<T> {
-        LinSpace {
-            x: 0,
-            steps,
-            util: (self, steps).into(),
-        }
+        LinSpace::new(steps, (self, steps).into())
     }
 }
 
@@ -77,20 +60,20 @@ impl<T> Linear for T where
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Lerp<T> {
+pub struct LinearInterpolation<T> {
     pub start: T,
     pub step: T,
 }
 
-impl<T: Linear> Lerp<T> {
-    #[inline]
-    pub fn lerp(self, x: usize) -> T {
-        let Self { start, step } = self;
+impl<T: Linear> Interpolate for LinearInterpolation<T> {
+    type Item = T;
+    fn interpolate(&self, x: usize) -> T {
+        let Self { start, step } = *self;
         start + T::from_usize(x).unwrap() * step
     }
 }
 
-impl<T: Linear> From<(Range<T>, usize)> for Lerp<T> {
+impl<T: Linear> From<(Range<T>, usize)> for LinearInterpolation<T> {
     fn from((range, steps): (Range<T>, usize)) -> Self {
         let Range { start, end } = range;
         let step = (end - start) / T::from_usize(steps).unwrap();
@@ -98,7 +81,7 @@ impl<T: Linear> From<(Range<T>, usize)> for Lerp<T> {
     }
 }
 
-impl<T: Linear> From<(RangeInclusive<T>, usize)> for Lerp<T> {
+impl<T: Linear> From<(RangeInclusive<T>, usize)> for LinearInterpolation<T> {
     fn from((range, steps): (RangeInclusive<T>, usize)) -> Self {
         let (start, end) = range.into_inner();
         let step = (end - start) / T::from_usize(steps - 1).unwrap();
@@ -107,93 +90,7 @@ impl<T: Linear> From<(RangeInclusive<T>, usize)> for Lerp<T> {
 }
 
 /// Iterator returned by [`lin_space`]
-#[derive(Clone, Debug)]
-pub struct LinSpace<T> {
-    pub(crate) x: usize,
-    pub(crate) steps: usize,
-    pub(crate) util: Lerp<T>,
-}
-
-impl<T: Linear> Iterator for LinSpace<T> {
-    type Item = T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.x < self.steps {
-            let n = self.x + 1;
-            Some(self.util.lerp(core::mem::replace(&mut self.x, n)))
-        } else {
-            None
-        }
-    }
-
-    fn count(self) -> usize
-    where
-        Self: Sized,
-    {
-        self.len()
-    }
-
-    fn last(mut self) -> Option<Self::Item>
-    where
-        Self: Sized,
-    {
-        self.next_back()
-    }
-
-    #[cfg(feature = "advanced_by")]
-    fn advance_by(&mut self, n: usize) -> Result<(), usize> {
-        let diff = self.steps - self.x;
-        if diff < n {
-            self.x = self.steps;
-            Err(diff)
-        } else {
-            self.x += n;
-            Ok(())
-        }
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        if self.steps - self.x < n {
-            self.x = self.steps;
-            None
-        } else {
-            self.x += n;
-            let n = self.x + 1;
-            Some(self.util.lerp(core::mem::replace(&mut self.x, n)))
-        }
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let len = self.len();
-        (len, Some(len))
-    }
-}
-
-impl<T: Linear> DoubleEndedIterator for LinSpace<T> {
-    #[inline]
-    fn next_back(&mut self) -> Option<Self::Item> {
-        if self.x < self.steps {
-            self.steps -= 1;
-            Some(self.util.lerp(self.steps))
-        } else {
-            None
-        }
-    }
-}
-
-impl<T: Linear> ExactSizeIterator for LinSpace<T> {
-    #[inline]
-    fn len(&self) -> usize {
-        self.steps - self.x
-    }
-}
-
-impl<T: Linear> FusedIterator for LinSpace<T> {}
-
-#[cfg(feature = "trusted_len")]
-use core::iter::TrustedLen;
-#[cfg(feature = "trusted_len")]
-unsafe impl<T: Linear> TrustedLen for LinSpace<T> {}
+pub type LinSpace<T> = Space<LinearInterpolation<T>>;
 
 #[cfg(test)]
 mod tests {
