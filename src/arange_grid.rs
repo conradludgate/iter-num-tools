@@ -1,7 +1,9 @@
-use crate::{arange::arange_lerp, gridspace::{GridSpace, GridSpaceInterpolation}, linspace::Linear};
-use array_init::array_init;
+use crate::{
+    arange::ArangeImpl,
+    gridspace::{GridSpace, GridSpaceInterpolation},
+};
+use array_iter_tools::ArrayIterator;
 use core::ops::Range;
-use num_traits::real::Real;
 
 /// Iterator returned by `arange_grid`
 pub type ArangeGrid<T, const N: usize> = GridSpace<T, N>;
@@ -47,35 +49,43 @@ pub trait IntoArangeGrid<F, S, const N: usize> {
     fn into_arange_grid(self, step: S) -> ArangeGrid<F, N>;
 }
 
-impl<F: Real + Linear, const N: usize> IntoArangeGrid<F, [F; N], N> for Range<[F; N]> {
+impl<F: Copy, const N: usize> IntoArangeGrid<F, [F; N], N> for Range<[F; N]>
+where
+    (Range<F>, F): Into<ArangeImpl<F>>,
+{
     fn into_arange_grid(self, step: [F; N]) -> ArangeGrid<F, N> {
         let Self { start, end } = self;
 
-        let mut steps = [0; N];
-        let mut y = 1;
-        let lerps = array_init(|i| {
-            let (lerp, s) = arange_lerp(start[i]..end[i], step[i]);
-            steps[i] = s;
-            y *= s;
-            lerp
-        });
+        let (lerps, steps) = start.zip_array(end).zip_array(step).map_array(|((start, end), step)| {
+            let ArangeImpl {
+                interpolate,
+                steps,
+            } = (start..end, step).into();
+            (interpolate, steps)
+        }).unzip_array();
+
+        let y = steps.iter().product();
 
         ArangeGrid::new(y, GridSpaceInterpolation(lerps, steps))
     }
 }
 
-impl<F: Real + Linear, const N: usize> IntoArangeGrid<F, F, N> for Range<[F; N]> {
+impl<F: Copy, const N: usize> IntoArangeGrid<F, F, N> for Range<[F; N]>
+where
+    (Range<F>, F): Into<ArangeImpl<F>>,
+{
     fn into_arange_grid(self, step: F) -> ArangeGrid<F, N> {
         let Self { start, end } = self;
 
-        let mut steps = [0; N];
-        let mut y = 1;
-        let lerps = array_init(|i| {
-            let (lerp, s) = arange_lerp(start[i]..end[i], step);
-            steps[i] = s;
-            y *= s;
-            lerp
-        });
+        let (lerps, steps) = start.zip_array(end).map_array(|(start, end)| {
+            let ArangeImpl {
+                interpolate,
+                steps,
+            } = (start..end, step).into();
+            (interpolate, steps)
+        }).unzip_array();
+
+        let y = steps.iter().product();
 
         ArangeGrid::new(y, GridSpaceInterpolation(lerps, steps))
     }

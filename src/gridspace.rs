@@ -1,4 +1,4 @@
-use array_init::array_init;
+use array_iter_tools::ArrayIterator;
 
 use crate::{
     linspace::{Linear, LinearInterpolation},
@@ -52,12 +52,11 @@ impl<T: Linear, const N: usize> IntoGridSpace<T, [usize; N], N> for Range<[T; N]
     fn into_grid_space(self, steps: [usize; N]) -> GridSpace<T, N> {
         let Self { start, end } = self;
 
-        let lerps = array_init(|i| (start[i]..end[i], steps[i]).into());
+        let lerps = start.zip_array(end).zip_array(steps).map_array(|((start, end), step)| {
+            (start..end, step).into()
+        }).collect_array();
 
-        let mut y = steps[0];
-        for i in 1..N {
-            y *= steps[i];
-        }
+        let y = steps.iter().product();
 
         GridSpace::new(y, GridSpaceInterpolation(lerps, steps))
     }
@@ -67,12 +66,11 @@ impl<T: Linear, const N: usize> IntoGridSpace<T, [usize; N], N> for RangeInclusi
     fn into_grid_space(self, steps: [usize; N]) -> GridSpace<T, N> {
         let (start, end) = self.into_inner();
 
-        let lerps = array_init(|i| (start[i]..=end[i], steps[i]).into());
+        let lerps = start.zip_array(end).zip_array(steps).map_array(|((start, end), step)| {
+            (start..=end, step).into()
+        }).collect_array();
 
-        let mut y = steps[0];
-        for i in 1..N {
-            y *= steps[i];
-        }
+        let y = steps.iter().product();
 
         GridSpace::new(y, GridSpaceInterpolation(lerps, steps))
     }
@@ -82,7 +80,9 @@ impl<T: Linear, const N: usize> IntoGridSpace<T, usize, N> for Range<[T; N]> {
     fn into_grid_space(self, steps: usize) -> GridSpace<T, N> {
         let Self { start, end } = self;
 
-        let lerps = array_init(|i| (start[i]..end[i], steps).into());
+        let lerps = start.zip_array(end).map_array(|(start, end)| {
+            (start..end, steps).into()
+        }).collect_array();
 
         GridSpace::new(
             steps.pow(N as u32),
@@ -95,7 +95,9 @@ impl<T: Linear, const N: usize> IntoGridSpace<T, usize, N> for RangeInclusive<[T
     fn into_grid_space(self, steps: usize) -> GridSpace<T, N> {
         let (start, end) = self.into_inner();
 
-        let lerps = array_init(|i| (start[i]..=end[i], steps).into());
+        let lerps = start.zip_array(end).map_array(|(start, end)| {
+            (start..=end, steps).into()
+        }).collect_array();
 
         GridSpace::new(
             steps.pow(N as u32),
@@ -108,6 +110,7 @@ pub struct GridSpaceInterpolation<T, const N: usize>(pub [LinearInterpolation<T>
 
 impl<T, const N: usize> Interpolate for GridSpaceInterpolation<T, N>
 where
+    T: Copy,
     LinearInterpolation<T>: Interpolate<Item = T>,
 {
     type Item = [T; N];
@@ -117,7 +120,7 @@ where
             indices[j] = x % self.1[j];
             x /= self.1[j]
         }
-        array_init(|i| self.0[i].interpolate(indices[i]))
+        self.0.zip_array(indices).map_array(|(lerp, i)| lerp.interpolate(i)).collect_array()
     }
 }
 
