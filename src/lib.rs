@@ -1,5 +1,6 @@
 #![deny(missing_docs)]
 #![cfg_attr(feature = "trusted_len", feature(trusted_len))]
+#![cfg_attr(feature = "iter_advance_by", feature(iter_advance_by))]
 //! `iter_num_tools` is a collection if iterator extensions that
 //! make heavy use of number properties.
 //! Mostly extending on [Range](std::ops::Range).
@@ -123,8 +124,8 @@ mod linspace;
 mod logspace;
 mod space;
 
-pub use arange::{arange, Arange, IntoArange};
-pub use arange_grid::{arange_grid, ArangeGrid, IntoArangeGrid};
-pub use gridspace::{grid_space, GridSpace, IntoGridSpace};
-pub use linspace::{lin_space, LinSpace, IntoLinSpace};
-pub use logspace::{log_space, LogSpace, IntoLogSpace};
+pub use arange::{arange, Arange};
+pub use arange_grid::{arange_grid, ArangeGrid};
+pub use gridspace::{grid_space, GridSpace};
+pub use linspace::{lin_space, LinSpace};
+pub use logspace::{log_space, LogSpace};

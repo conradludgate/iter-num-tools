@@ -1,4 +1,4 @@
-use crate::linspace::{LinSpace, Linear, LinearInterpolation};
+use crate::linspace::{LinSpace, LinearInterpolation};
 use core::ops::Range;
 use num_traits::real::Real;
 
@@ -16,25 +16,10 @@ pub type Arange<T> = LinSpace<T>;
 /// ```
 pub fn arange<R, F>(range: R, step: F) -> Arange<F>
 where
-    R: IntoArange<F>,
+    (R, F): Into<ArangeImpl<F>>,
 {
-    range.into_arange(step)
-}
-
-/// Used by [`arange`]
-pub trait IntoArange<F> {
-    /// Convert self into an [`Arange`]
-    fn into_arange(self, step: F) -> Arange<F>;
-}
-
-impl<F> IntoArange<F> for Range<F>
-where
-    (Range<F>, F): Into<ArangeImpl<F>>,
-{
-    fn into_arange(self, step: F) -> Arange<F> {
-        let ArangeImpl { interpolate, steps } = (self, step).into();
-        LinSpace::new(steps, interpolate)
-    }
+    let ArangeImpl { interpolate, steps } = (range, step).into();
+    Arange::new(steps, interpolate)
 }
 
 pub struct ArangeImpl<T> {
@@ -42,7 +27,7 @@ pub struct ArangeImpl<T> {
     pub steps: usize,
 }
 
-impl<F: Real + Linear> From<(Range<F>, F)> for ArangeImpl<F> {
+impl<F: Real> From<(Range<F>, F)> for ArangeImpl<F> {
     fn from((range, step): (Range<F>, F)) -> Self {
         let Range { start, end } = range;
 

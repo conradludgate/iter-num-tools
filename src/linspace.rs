@@ -1,6 +1,6 @@
 use crate::space::{Interpolate, Space};
-use core::ops::{Add, Div, Mul, Range, RangeInclusive, Sub};
-use num_traits::FromPrimitive;
+use core::ops::{Range, RangeInclusive};
+use num_traits::{FromPrimitive, Num};
 
 /// Creates a linear space over range with a fixed number of steps
 ///
@@ -18,45 +18,9 @@ use num_traits::FromPrimitive;
 #[inline]
 pub fn lin_space<R, T>(range: R, steps: usize) -> LinSpace<T>
 where
-    R: IntoLinSpace<T>,
-{
-    range.into_lin_space(steps)
-}
-
-/// Used by [`lin_space`]
-pub trait IntoLinSpace<T> {
-    /// Convert self into a [`LinSpace`]
-    fn into_lin_space(self, steps: usize) -> LinSpace<T>;
-}
-
-impl<T, R> IntoLinSpace<T> for R
-where
-    T: Linear,
     (R, usize): Into<LinearInterpolation<T>>,
 {
-    fn into_lin_space(self, steps: usize) -> LinSpace<T> {
-        LinSpace::new(steps, (self, steps).into())
-    }
-}
-
-/// Trait required for [`lin_space`] implementations.
-pub trait Linear:
-    FromPrimitive
-    + Mul<Output = Self>
-    + Sub<Output = Self>
-    + Add<Output = Self>
-    + Div<Output = Self>
-    + Copy
-{
-}
-impl<T> Linear for T where
-    T: FromPrimitive
-        + Mul<Output = Self>
-        + Sub<Output = Self>
-        + Add<Output = Self>
-        + Div<Output = Self>
-        + Copy
-{
+    LinSpace::new(steps, (range, steps).into())
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -65,15 +29,15 @@ pub struct LinearInterpolation<T> {
     pub step: T,
 }
 
-impl<T: Linear> Interpolate for LinearInterpolation<T> {
+impl<T: Num + FromPrimitive> Interpolate for LinearInterpolation<T> {
     type Item = T;
-    fn interpolate(&self, x: usize) -> T {
-        let Self { start, step } = *self;
+    fn interpolate(self, x: usize) -> T {
+        let Self { start, step } = self;
         start + T::from_usize(x).unwrap() * step
     }
 }
 
-impl<T: Linear> From<(Range<T>, usize)> for LinearInterpolation<T> {
+impl<T: Num + FromPrimitive + Copy> From<(Range<T>, usize)> for LinearInterpolation<T> {
     fn from((range, steps): (Range<T>, usize)) -> Self {
         let Range { start, end } = range;
         let step = (end - start) / T::from_usize(steps).unwrap();
@@ -81,7 +45,7 @@ impl<T: Linear> From<(Range<T>, usize)> for LinearInterpolation<T> {
     }
 }
 
-impl<T: Linear> From<(RangeInclusive<T>, usize)> for LinearInterpolation<T> {
+impl<T: Num + FromPrimitive + Copy> From<(RangeInclusive<T>, usize)> for LinearInterpolation<T> {
     fn from((range, steps): (RangeInclusive<T>, usize)) -> Self {
         let (start, end) = range.into_inner();
         let step = (end - start) / T::from_usize(steps - 1).unwrap();
@@ -132,5 +96,29 @@ mod tests {
         }
 
         assert_eq!(it.len(), expected_len);
+    }
+
+    #[test]
+    fn test_lin_space_extras() {
+        // count
+        assert_eq!(lin_space(0.0..=5.0, 6).count(), 6);
+
+        // nth
+        let mut it = lin_space(0.0..=5.0, 6);
+        assert_eq!(it.nth(2), Some(2.0));
+        assert_eq!(it.nth_back(2), Some(3.0));
+
+        assert_eq!(lin_space(0.0..=5.0, 6).last(), Some(5.0));
+    }
+
+    #[test]
+    #[cfg(feature = "iter_advance_by")]
+    fn test_lin_space_advance_by() {
+        let mut it = lin_space(0.0..=5.0, 6);
+        it.advance_by(2).unwrap();
+        assert_eq!(it.next(), Some(2.0));
+
+        it.advance_back_by(2).unwrap();
+        assert_eq!(it.next_back(), Some(3.0));
     }
 }

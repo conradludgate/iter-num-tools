@@ -14,10 +14,11 @@ categories = ["algorithms", "rust-patterns", "no-std"]
 
 [dependencies]
 num-traits = { version = "0.2", default-features = false, features = ["libm"] }
-array_iter_tools = { version = "0.1.1", default-features = false }
+array_iter_tools = "0.2.0"
 
 [features]
 trusted_len = []
+iter_advance_by = []
 
 [dev-dependencies]
 itertools = "0.10"

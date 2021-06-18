@@ -2,7 +2,7 @@ use crate::{
     arange::ArangeImpl,
     gridspace::{GridSpace, GridSpaceInterpolation},
 };
-use array_iter_tools::ArrayIterator;
+use array_iter_tools::{ArrayIterator, IntoArrayIterator};
 use core::ops::Range;
 
 /// Iterator returned by `arange_grid`
@@ -56,13 +56,13 @@ where
     fn into_arange_grid(self, step: [F; N]) -> ArangeGrid<F, N> {
         let Self { start, end } = self;
 
-        let (lerps, steps) = start.zip_array(end).zip_array(step).map_array(|((start, end), step)| {
+        let (lerps, steps) = start.into_array_iter().zip(end).zip(step).map(|((start, end), step)| {
             let ArangeImpl {
                 interpolate,
                 steps,
             } = (start..end, step).into();
             (interpolate, steps)
-        }).unzip_array();
+        }).unzip();
 
         let y = steps.iter().product();
 
@@ -77,13 +77,13 @@ where
     fn into_arange_grid(self, step: F) -> ArangeGrid<F, N> {
         let Self { start, end } = self;
 
-        let (lerps, steps) = start.zip_array(end).map_array(|(start, end)| {
+        let (lerps, steps) = start.into_array_iter().zip(end).map(|(start, end)| {
             let ArangeImpl {
                 interpolate,
                 steps,
             } = (start..end, step).into();
             (interpolate, steps)
-        }).unzip_array();
+        }).unzip();
 
         let y = steps.iter().product();
 

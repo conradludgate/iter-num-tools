@@ -3,7 +3,7 @@ use core::ops::Range;
 
 pub trait Interpolate {
     type Item;
-    fn interpolate(&self, x: usize) -> Self::Item;
+    fn interpolate(self, x: usize) -> Self::Item;
 }
 
 #[derive(Clone, Debug)]
@@ -21,7 +21,7 @@ impl<I> Space<I> {
     }
 }
 
-impl<I: Interpolate> Iterator for Space<I> {
+impl<I: Interpolate + Copy> Iterator for Space<I> {
     type Item = I::Item;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -42,9 +42,9 @@ impl<I: Interpolate> Iterator for Space<I> {
         self.next_back()
     }
 
-    #[cfg(feature = "advanced_by")]
+    #[cfg(feature = "iter_advance_by")]
     fn advance_by(&mut self, n: usize) -> Result<(), usize> {
-        self.range.advanced_by(n)
+        self.range.advance_by(n)
     }
 
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
@@ -57,25 +57,34 @@ impl<I: Interpolate> Iterator for Space<I> {
     }
 }
 
-impl<I: Interpolate> DoubleEndedIterator for Space<I> {
+impl<I: Interpolate + Copy> DoubleEndedIterator for Space<I> {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         self.range
             .next_back()
             .map(|x| self.interpolate.interpolate(x))
     }
+
+    #[cfg(feature = "iter_advance_by")]
+    fn advance_back_by(&mut self, n: usize) -> Result<(), usize> {
+        self.range.advance_back_by(n)
+    }
+
+    fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
+        self.range.nth_back(n).map(|x| self.interpolate.interpolate(x))
+    }
 }
 
-impl<I: Interpolate> ExactSizeIterator for Space<I> {
+impl<I: Interpolate + Copy> ExactSizeIterator for Space<I> {
     #[inline]
     fn len(&self) -> usize {
         self.range.len()
     }
 }
 
-impl<I: Interpolate> FusedIterator for Space<I> {}
+impl<I: Interpolate + Copy> FusedIterator for Space<I> {}
 
 #[cfg(feature = "trusted_len")]
 use core::iter::TrustedLen;
 #[cfg(feature = "trusted_len")]
-unsafe impl<I: Interpolate> TrustedLen for Space<I> {}
+unsafe impl<I: Interpolate + Copy> TrustedLen for Space<I> {}
