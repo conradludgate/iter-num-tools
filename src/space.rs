@@ -71,7 +71,9 @@ impl<I: Interpolate + Copy> DoubleEndedIterator for Space<I> {
     }
 
     fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
-        self.range.nth_back(n).map(|x| self.interpolate.interpolate(x))
+        self.range
+            .nth_back(n)
+            .map(|x| self.interpolate.interpolate(x))
     }
 }
 
