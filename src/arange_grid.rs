@@ -5,7 +5,7 @@ use crate::{
 use array_iter_tools::{ArrayIterator, IntoArrayIterator};
 use core::ops::Range;
 
-/// Iterator returned by `arange_grid`
+/// Iterator returned by [`arange_grid`]
 pub type ArangeGrid<T, const N: usize> = GridSpace<T, N>;
 
 /// Creates a grid space over the range made up of fixed step intervals

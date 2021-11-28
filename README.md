@@ -156,10 +156,10 @@ fn lin_space_std(start: f64, end: f64, steps: usize) -> impl Iterator<Item = f64
     let step = len / steps as f64;
     (0..=steps).map(move |i| start + i as f64 * step)
 }
-bench(lin_space_std(1.0, 3.0, 100))
+bench(lin_space_std(1.0, 3.0, 100));
 
 // third benchmark (slowest)
-bench(itertools_num::linspace(1.0, 3.0, 100))
+bench(itertools_num::linspace(1.0, 3.0, 100));
 ```
 
 It also does not provide any other utilities. Only `linspace` (inclusive) and a 'Cumulative sum' iterator adaptor.
