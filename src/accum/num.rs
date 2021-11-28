@@ -1,4 +1,4 @@
-use super::{Sum2, Product2};
+use super::{Product2, Sum2};
 use core::num::Wrapping;
 
 macro_rules! impl_sum_product {
