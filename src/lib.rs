@@ -138,6 +138,8 @@ mod linspace;
 mod logspace;
 mod space;
 
+pub use accum::{Sum2, Product2};
+pub use adapter::IterAdapter;
 pub use arange::{arange, Arange};
 pub use arange_grid::{arange_grid, ArangeGrid};
 pub use gridspace::{grid_space, GridSpace};
