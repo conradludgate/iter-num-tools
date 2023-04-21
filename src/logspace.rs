@@ -1,7 +1,7 @@
 use core::ops::{Range, RangeInclusive};
 use num_traits::{real::Real, FromPrimitive};
 
-use crate::space::{Interpolate, Space};
+use crate::space::{Interpolate, IntoSpace, Space};
 
 /// Creates a logarithmic space over range with a fixed number of steps
 ///
@@ -23,17 +23,25 @@ use crate::space::{Interpolate, Space};
 /// // all approx equal
 /// assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 /// ```
-pub fn log_space<R, T>(range: R, steps: usize) -> LogSpace<T>
+pub fn log_space<R>(range: R, steps: usize) -> LogSpace<R::Item>
 where
-    (R, usize): Into<LogarithmicInterpolation<T>>,
+    R: ToLogSpace,
 {
-    LogSpace::new(steps, (range, steps).into())
+    range.into_log_space(steps).into_space()
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct LogarithmicInterpolation<T> {
     pub start: T,
     pub step: T,
+}
+
+/// A helper trait for [`log_space`]
+pub trait ToLogSpace {
+    /// The item that this is a logarithmic space over
+    type Item;
+    /// Create the log space
+    fn into_log_space(self, step: usize) -> IntoLogSpace<Self::Item>;
 }
 
 impl<T: Real> Interpolate for LogarithmicInterpolation<T> {
@@ -44,24 +52,30 @@ impl<T: Real> Interpolate for LogarithmicInterpolation<T> {
     }
 }
 
-impl<T: Real + FromPrimitive> From<(Range<T>, usize)> for LogarithmicInterpolation<T> {
-    fn from((range, steps): (Range<T>, usize)) -> Self {
-        let Range { start, end } = range;
+impl<T: Real + FromPrimitive> ToLogSpace for Range<T> {
+    type Item = T;
+
+    fn into_log_space(self, steps: usize) -> IntoLogSpace<Self::Item> {
+        let Range { start, end } = self;
         let step = (end / start).powf(T::from_usize(steps).unwrap().recip());
-        Self { start, step }
+        IntoLogSpace::new(steps, LogarithmicInterpolation { start, step })
     }
 }
 
-impl<T: Real + FromPrimitive> From<(RangeInclusive<T>, usize)> for LogarithmicInterpolation<T> {
-    fn from((range, steps): (RangeInclusive<T>, usize)) -> Self {
-        let (start, end) = range.into_inner();
+impl<T: Real + FromPrimitive> ToLogSpace for RangeInclusive<T> {
+    type Item = T;
+
+    fn into_log_space(self, steps: usize) -> IntoLogSpace<Self::Item> {
+        let (start, end) = self.into_inner();
         let step = (end / start).powf(T::from_usize(steps - 1).unwrap().recip());
-        Self { start, step }
+        IntoLogSpace::new(steps, LogarithmicInterpolation { start, step })
     }
 }
 
-/// Iterator returned by [`log_space`]
+/// [`Iterator`] returned by [`log_space`]
 pub type LogSpace<T> = Space<LogarithmicInterpolation<T>>;
+/// [`IntoIterator`] returned by [`ToLogSpace::into_log_space`]
+pub type IntoLogSpace<T> = IntoSpace<LogarithmicInterpolation<T>>;
 
 #[cfg(test)]
 mod tests {

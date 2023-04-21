@@ -1,9 +1,8 @@
 use array_bin_ops::Array;
-use num_traits::Num;
 
 use crate::{
-    linspace::LinearInterpolation,
-    space::{Interpolate, Space},
+    linspace::{LinearInterpolation, ToLinSpace},
+    space::{Interpolate, IntoSpace, Space},
 };
 use core::ops::{Range, RangeInclusive};
 
@@ -28,7 +27,7 @@ use core::ops::{Range, RangeInclusive};
 ///     [0.0, 2.0], [0.5, 2.0], [1.0, 2.0],
 /// ]));
 ///
-/// // even 3d spaces
+/// // even nd spaces
 /// let it = grid_space([0, 0, 0]..=[1, 1, 1], 2);
 /// assert!(it.eq(vec![
 ///     [0, 0, 0], [1, 0, 0],
@@ -38,79 +37,95 @@ use core::ops::{Range, RangeInclusive};
 ///     [0, 1, 1], [1, 1, 1],
 /// ]));
 /// ```
-pub fn grid_space<T, R, S, const N: usize>(range: R, steps: S) -> GridSpace<T, N>
+pub fn grid_space<R, S, const N: usize>(range: R, steps: S) -> GridSpace<R::Item, N>
 where
-    (R, S): Into<GridSpace<T, N>>,
+    R: ToGridSpace<S, N>,
 {
-    (range, steps).into()
+    range.into_grid_space(steps).into_space()
 }
 
-impl<T: Num + Copy, const N: usize> From<(Range<[T; N]>, [usize; N])> for GridSpace<T, N>
+/// Helper trait for [`grid_space`]
+pub trait ToGridSpace<S, const N: usize> {
+    /// The item that this is a grid space over
+    type Item;
+    /// Create the grid space
+    fn into_grid_space(self, step: S) -> IntoGridSpace<Self::Item, N>;
+}
+
+impl<T, const N: usize> ToGridSpace<[usize; N], N> for Range<[T; N]>
 where
-    (Range<T>, usize): Into<LinearInterpolation<T>>,
+    Range<T>: ToLinSpace,
 {
-    fn from((range, steps): (Range<[T; N]>, [usize; N])) -> Self {
-        let Range { start, end } = range;
+    type Item = <Range<T> as ToLinSpace>::Item;
+
+    fn into_grid_space(self, steps: [usize; N]) -> IntoGridSpace<Self::Item, N> {
+        let Range { start, end } = self;
 
         let mut len = 1;
         let ranges = Array(start).zip_map(end, |start, end| start..end);
         let lerps = Array(ranges).zip_map(steps, |range, step| {
-            let lerp: LinearInterpolation<T> = (range, step).into();
-            len *= step;
-            (lerp, step)
+            let lin_space = range.into_lin_space(step);
+            len *= lin_space.len;
+            lin_space
         });
 
-        Self::new(len, GridSpaceInterpolation(lerps))
+        IntoGridSpace::new(len, GridSpaceInterpolation(lerps))
     }
 }
 
-impl<T: Num + Copy, const N: usize> From<(RangeInclusive<[T; N]>, [usize; N])> for GridSpace<T, N>
+impl<T, const N: usize> ToGridSpace<[usize; N], N> for RangeInclusive<[T; N]>
 where
-    (RangeInclusive<T>, usize): Into<LinearInterpolation<T>>,
+    RangeInclusive<T>: ToLinSpace,
 {
-    fn from((range, steps): (RangeInclusive<[T; N]>, [usize; N])) -> Self {
-        let (start, end) = range.into_inner();
+    type Item = <RangeInclusive<T> as ToLinSpace>::Item;
+
+    fn into_grid_space(self, steps: [usize; N]) -> IntoGridSpace<Self::Item, N> {
+        let (start, end) = self.into_inner();
 
         let mut len = 1;
         let ranges = Array(start).zip_map(end, RangeInclusive::new);
         let lerps = Array(ranges).zip_map(steps, |range, step| {
-            let lerp: LinearInterpolation<T> = (range, step).into();
-            len *= step;
-            (lerp, step)
+            let lin_space = range.into_lin_space(step);
+            len *= lin_space.len;
+            lin_space
         });
 
-        Self::new(len, GridSpaceInterpolation(lerps))
+        IntoGridSpace::new(len, GridSpaceInterpolation(lerps))
     }
 }
 
-impl<T: Num + Copy, const N: usize> From<(Range<[T; N]>, usize)> for GridSpace<T, N>
+impl<T, const N: usize> ToGridSpace<usize, N> for Range<[T; N]>
 where
-    (Range<T>, usize): Into<LinearInterpolation<T>>,
+    Range<T>: ToLinSpace,
 {
-    fn from((range, steps): (Range<[T; N]>, usize)) -> Self {
-        let Range { start, end } = range;
+    type Item = <Range<T> as ToLinSpace>::Item;
 
-        let lerps = Array(start).zip_map(end, |start, end| ((start..end, steps).into(), steps));
+    fn into_grid_space(self, steps: usize) -> IntoGridSpace<Self::Item, N> {
+        let Range { start, end } = self;
 
-        Self::new(steps.pow(N as u32), GridSpaceInterpolation(lerps))
+        let lerps = Array(start).zip_map(end, |start, end| (start..end).into_lin_space(steps));
+
+        IntoGridSpace::new(steps.pow(N as u32), GridSpaceInterpolation(lerps))
     }
 }
 
-impl<T: Num + Copy, const N: usize> From<(RangeInclusive<[T; N]>, usize)> for GridSpace<T, N>
+impl<T, const N: usize> ToGridSpace<usize, N> for RangeInclusive<[T; N]>
 where
-    (RangeInclusive<T>, usize): Into<LinearInterpolation<T>>,
+    RangeInclusive<T>: ToLinSpace,
 {
-    fn from((range, steps): (RangeInclusive<[T; N]>, usize)) -> Self {
-        let (start, end) = range.into_inner();
+    type Item = <RangeInclusive<T> as ToLinSpace>::Item;
 
-        let lerps = Array(start).zip_map(end, |start, end| ((start..=end, steps).into(), steps));
+    fn into_grid_space(self, steps: usize) -> IntoGridSpace<Self::Item, N> {
+        let (start, end) = self.into_inner();
 
-        Self::new(steps.pow(N as u32), GridSpaceInterpolation(lerps))
+        let lerps = Array(start).zip_map(end, |start, end| (start..=end).into_lin_space(steps));
+
+        IntoGridSpace::new(steps.pow(N as u32), GridSpaceInterpolation(lerps))
     }
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct GridSpaceInterpolation<T, const N: usize>(pub [(LinearInterpolation<T>, usize); N]);
+pub struct GridSpaceInterpolation<T, const N: usize>(pub [IntoSpace<LinearInterpolation<T>>; N]);
 
 impl<T, const N: usize> Interpolate for GridSpaceInterpolation<T, N>
 where
@@ -118,16 +133,19 @@ where
 {
     type Item = [T; N];
     fn interpolate(self, mut x: usize) -> [T; N] {
-        self.0.map(|(lerp, step)| {
-            let z = x % step;
-            x /= step;
-            lerp.interpolate(z)
+        self.0.map(|space| {
+            let z = x % space.len;
+            x /= space.len;
+            space.interpolate.interpolate(z)
         })
     }
 }
 
-/// Iterator returned by [`grid_space`]
+/// [`Iterator`] returned by [`grid_space`]
 pub type GridSpace<T, const N: usize> = Space<GridSpaceInterpolation<T, N>>;
+
+/// [`IntoIterator`] returned by [`ToGridSpace::into_grid_space`]
+pub type IntoGridSpace<T, const N: usize> = IntoSpace<GridSpaceInterpolation<T, N>>;
 
 #[cfg(test)]
 mod tests {

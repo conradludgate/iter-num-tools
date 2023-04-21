@@ -6,6 +6,30 @@ pub trait Interpolate {
     fn interpolate(self, x: usize) -> Self::Item;
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct IntoSpace<I> {
+    pub interpolate: I,
+    pub len: usize,
+}
+
+impl<I> IntoSpace<I> {
+    pub fn new(len: usize, interpolate: I) -> Self {
+        IntoSpace { interpolate, len }
+    }
+    pub fn into_space(self) -> Space<I> {
+        Space::new(self.len, self.interpolate)
+    }
+}
+
+impl<I: Interpolate + Copy> IntoIterator for IntoSpace<I> {
+    type Item = I::Item;
+    type IntoIter = Space<I>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.into_space()
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Space<I> {
     interpolate: I,

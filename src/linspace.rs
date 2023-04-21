@@ -1,4 +1,4 @@
-use crate::space::{Interpolate, Space};
+use crate::space::{Interpolate, IntoSpace, Space};
 use core::ops::{Range, RangeInclusive};
 use num_traits::{FromPrimitive, Num};
 
@@ -16,17 +16,45 @@ use num_traits::{FromPrimitive, Num};
 /// assert!(it.eq(vec![20.0, 20.5]));
 /// ```
 #[inline]
-pub fn lin_space<R, T>(range: R, steps: usize) -> LinSpace<T>
+pub fn lin_space<R>(range: R, steps: usize) -> LinSpace<R::Item>
 where
-    (R, usize): Into<LinearInterpolation<T>>,
+    R: ToLinSpace,
 {
-    LinSpace::new(steps, (range, steps).into())
+    range.into_lin_space(steps).into_space()
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct LinearInterpolation<T> {
     pub start: T,
     pub step: T,
+}
+
+/// A helper trait for [`lin_space`]
+pub trait ToLinSpace {
+    /// The item that this is a linear space over
+    type Item;
+    /// Create the lin space
+    fn into_lin_space(self, step: usize) -> IntoLinSpace<Self::Item>;
+}
+
+impl<T: Num + FromPrimitive + Copy> ToLinSpace for Range<T> {
+    type Item = T;
+
+    fn into_lin_space(self, steps: usize) -> IntoLinSpace<Self::Item> {
+        let Range { start, end } = self;
+        let step = (end - start) / T::from_usize(steps).unwrap();
+        IntoLinSpace::new(steps, LinearInterpolation { start, step })
+    }
+}
+
+impl<T: Num + FromPrimitive + Copy> ToLinSpace for RangeInclusive<T> {
+    type Item = T;
+
+    fn into_lin_space(self, steps: usize) -> IntoLinSpace<Self::Item> {
+        let (start, end) = self.into_inner();
+        let step = (end - start) / T::from_usize(steps - 1).unwrap();
+        IntoLinSpace::new(steps, LinearInterpolation { start, step })
+    }
 }
 
 impl<T: Num + FromPrimitive> Interpolate for LinearInterpolation<T> {
@@ -37,24 +65,11 @@ impl<T: Num + FromPrimitive> Interpolate for LinearInterpolation<T> {
     }
 }
 
-impl<T: Num + FromPrimitive + Copy> From<(Range<T>, usize)> for LinearInterpolation<T> {
-    fn from((range, steps): (Range<T>, usize)) -> Self {
-        let Range { start, end } = range;
-        let step = (end - start) / T::from_usize(steps).unwrap();
-        Self { start, step }
-    }
-}
-
-impl<T: Num + FromPrimitive + Copy> From<(RangeInclusive<T>, usize)> for LinearInterpolation<T> {
-    fn from((range, steps): (RangeInclusive<T>, usize)) -> Self {
-        let (start, end) = range.into_inner();
-        let step = (end - start) / T::from_usize(steps - 1).unwrap();
-        Self { start, step }
-    }
-}
-
-/// Iterator returned by [`lin_space`]
+/// [`Iterator`] returned by [`lin_space`]
 pub type LinSpace<T> = Space<LinearInterpolation<T>>;
+
+/// [`IntoIterator`] returned by [`ToLinSpace::into_lin_space`]
+pub type IntoLinSpace<T> = IntoSpace<LinearInterpolation<T>>;
 
 #[cfg(test)]
 mod tests {

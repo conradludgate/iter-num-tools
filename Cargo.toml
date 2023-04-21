@@ -1,6 +1,6 @@
 [package]
 name = "iter_num_tools"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["Conrad Ludgate <conradludgate@gmail.com>"]
 edition = "2021"
 description = "Create simple iterators over non integer ranges. itertools + num = iter_num_tools"

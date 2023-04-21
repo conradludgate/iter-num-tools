@@ -128,7 +128,7 @@
 //!
 //! assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 //! ```
-#![deny(missing_docs)]
+#![warn(missing_docs)]
 #![cfg_attr(feature = "trusted_len", feature(trusted_len))]
 #![cfg_attr(feature = "iter_advance_by", feature(iter_advance_by))]
 #![cfg_attr(not(test), no_std)]
@@ -137,22 +137,21 @@
 #[macro_use]
 extern crate pretty_assertions;
 
-mod accum;
-mod adapter;
 mod arange;
 mod arange_grid;
 mod gridspace;
+mod gridstep;
 mod linspace;
 mod logspace;
 mod space;
+mod step;
 
-pub use accum::{Product2, Sum2};
-pub use adapter::IterAdapter;
-pub use arange::{arange, Arange};
-pub use arange_grid::{arange_grid, ArangeGrid};
-pub use gridspace::{grid_space, GridSpace};
-pub use linspace::{lin_space, LinSpace};
-pub use logspace::{log_space, LogSpace};
+pub use arange::{arange, Arange, IntoArange, ToArange};
+pub use arange_grid::{arange_grid, ArangeGrid, IntoArangeGrid, ToArangeGrid};
+pub use gridspace::{grid_space, GridSpace, IntoGridSpace, ToGridSpace};
+pub use gridstep::{grid_step, GridStep, IntoGridStep, ToGridStep};
+pub use linspace::{lin_space, IntoLinSpace, LinSpace, ToLinSpace};
+pub use logspace::{log_space, IntoLogSpace, LogSpace, ToLogSpace};
 
 #[cfg(test)]
 #[track_caller]
@@ -167,3 +166,11 @@ pub fn check_double_ended_iter<T: PartialEq + core::fmt::Debug, const N: usize>(
     expected.reverse();
     assert_eq!(actual, expected);
 }
+
+// pub trait Array<const N: usize> {
+//     type Item;
+// }
+
+// impl<T, const N: usize> Array<N> for [T; N] {
+//     type Item = T;
+// }

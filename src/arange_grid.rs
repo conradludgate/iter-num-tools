@@ -1,12 +1,16 @@
 use crate::{
-    arange::ArangeImpl,
+    arange::ToArange,
     gridspace::{GridSpace, GridSpaceInterpolation},
+    IntoGridSpace,
 };
 use array_bin_ops::Array;
 use core::ops::Range;
 
-/// Iterator returned by [`arange_grid`]
+/// [`Iterator`] returned by [`arange_grid`]
 pub type ArangeGrid<T, const N: usize> = GridSpace<T, N>;
+
+/// [`IntoIterator`] returned by [`ToGridSpace::into_grid_space`]
+pub type IntoArangeGrid<T, const N: usize> = IntoGridSpace<T, N>;
 
 /// Creates a grid space over the range made up of fixed step intervals
 ///
@@ -28,7 +32,7 @@ pub type ArangeGrid<T, const N: usize> = GridSpace<T, N>;
 ///     [0.0, 1.0], [0.5, 1.0],
 /// ]));
 ///
-/// // even 3d spaces
+/// // even nd spaces
 /// let it = arange_grid([0.0, 0.0, 0.0]..[2.0, 2.0, 2.0], 1.0);
 /// assert!(it.eq([
 ///     [0.0, 0.0, 0.0], [1.0, 0.0, 0.0],
@@ -38,59 +42,58 @@ pub type ArangeGrid<T, const N: usize> = GridSpace<T, N>;
 ///     [0.0, 1.0, 1.0], [1.0, 1.0, 1.0],
 /// ]));
 /// ```
-pub fn arange_grid<F, R, S, const N: usize>(range: R, step: S) -> ArangeGrid<F, N>
+pub fn arange_grid<R, S, const N: usize>(range: R, step: S) -> ArangeGrid<R::Item, N>
 where
-    (R, S): Into<ArangeGridImpl<F, N>>,
+    R: ToArangeGrid<S, N>,
 {
-    let ArangeGridImpl { len, interpolate } = (range, step).into();
-    ArangeGrid::new(len, interpolate)
+    range.into_arange_grid(step).into_space()
 }
 
-pub struct ArangeGridImpl<F, const N: usize> {
-    len: usize,
-    interpolate: GridSpaceInterpolation<F, N>,
+/// Helper trait for [`arange_grid`]
+pub trait ToArangeGrid<S, const N: usize> {
+    /// The item that this is a arange grid over
+    type Item;
+    /// Create the arange grid
+    fn into_arange_grid(self, step: S) -> IntoArangeGrid<Self::Item, N>;
 }
 
-impl<F: Copy, const N: usize> From<(Range<[F; N]>, [F; N])> for ArangeGridImpl<F, N>
+impl<F: Copy, const N: usize> ToArangeGrid<[F; N], N> for Range<[F; N]>
 where
-    (Range<F>, F): Into<ArangeImpl<F>>,
+    Range<F>: ToArange<F>,
 {
-    fn from((range, step): (Range<[F; N]>, [F; N])) -> Self {
-        let Range { start, end } = range;
+    type Item = <Range<F> as ToArange<F>>::Item;
+
+    fn into_arange_grid(self, step: [F; N]) -> IntoArangeGrid<Self::Item, N> {
+        let Range { start, end } = self;
 
         let mut len = 1;
         let ranges = Array(start).zip_map(end, |start, end| start..end);
         let lerps = Array(ranges).zip_map(step, |range, step| {
-            let ArangeImpl { interpolate, steps } = (range, step).into();
-            len *= steps;
-            (interpolate, steps)
+            let space = range.into_arange(step);
+            len *= space.len;
+            space
         });
 
-        Self {
-            len,
-            interpolate: GridSpaceInterpolation(lerps),
-        }
+        IntoArangeGrid::new(len, GridSpaceInterpolation(lerps))
     }
 }
-
-impl<F: Copy, const N: usize> From<(Range<[F; N]>, F)> for ArangeGridImpl<F, N>
+impl<F: Copy, const N: usize> ToArangeGrid<F, N> for Range<[F; N]>
 where
-    (Range<F>, F): Into<ArangeImpl<F>>,
+    Range<F>: ToArange<F>,
 {
-    fn from((range, step): (Range<[F; N]>, F)) -> Self {
-        let Range { start, end } = range;
+    type Item = <Range<F> as ToArange<F>>::Item;
+
+    fn into_arange_grid(self, step: F) -> IntoArangeGrid<Self::Item, N> {
+        let Range { start, end } = self;
 
         let mut len = 1;
         let lerps = Array(start).zip_map(end, |start, end| {
-            let ArangeImpl { interpolate, steps } = (start..end, step).into();
-            len *= steps;
-            (interpolate, steps)
+            let space = (start..end).into_arange(step);
+            len *= space.len;
+            space
         });
 
-        Self {
-            len,
-            interpolate: GridSpaceInterpolation(lerps),
-        }
+        IntoArangeGrid::new(len, GridSpaceInterpolation(lerps))
     }
 }
 

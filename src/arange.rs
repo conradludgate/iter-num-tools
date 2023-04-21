@@ -1,9 +1,12 @@
-use crate::linspace::{LinSpace, LinearInterpolation};
+use crate::linspace::{IntoLinSpace, LinSpace, LinearInterpolation};
 use core::ops::Range;
 use num_traits::real::Real;
 
-/// Iterator returned by [`arange`]
+/// [`Iterator`] returned by [`arange`]
 pub type Arange<T> = LinSpace<T>;
+
+/// [`IntoIterator`] returned by [`ToArange::into_arange`]
+pub type IntoArange<T> = IntoLinSpace<T>;
 
 /// Create a new iterator over the range, stepping by `step` each time
 /// This allows you to create simple float iterators
@@ -14,27 +17,31 @@ pub type Arange<T> = LinSpace<T>;
 /// let it = arange(0.0..2.0, 0.5);
 /// assert!(it.eq(vec![0.0, 0.5, 1.0, 1.5]));
 /// ```
-pub fn arange<R, F>(range: R, step: F) -> Arange<F>
+pub fn arange<R, F>(range: R, step: F) -> Arange<R::Item>
 where
-    (R, F): Into<ArangeImpl<F>>,
+    R: ToArange<F>,
 {
-    let ArangeImpl { interpolate, steps } = (range, step).into();
-    Arange::new(steps, interpolate)
+    range.into_arange(step).into_space()
 }
 
-pub struct ArangeImpl<T> {
-    pub interpolate: LinearInterpolation<T>,
-    pub steps: usize,
+/// Helper trait for [`arange`]
+pub trait ToArange<S> {
+    /// The item that this is a arange space over
+    type Item;
+    /// Create the arange space
+    fn into_arange(self, step: S) -> IntoArange<Self::Item>;
 }
 
-impl<F: Real> From<(Range<F>, F)> for ArangeImpl<F> {
-    fn from((range, step): (Range<F>, F)) -> Self {
-        let Range { start, end } = range;
+impl<F: Real> ToArange<F> for Range<F> {
+    type Item = F;
 
-        ArangeImpl {
-            interpolate: LinearInterpolation { start, step },
-            steps: ((end - start) / step).ceil().to_usize().unwrap(),
-        }
+    fn into_arange(self, step: F) -> IntoArange<Self::Item> {
+        let Range { start, end } = self;
+
+        IntoArange::new(
+            ((end - start) / step).ceil().to_usize().unwrap(),
+            LinearInterpolation { start, step },
+        )
     }
 }
 
