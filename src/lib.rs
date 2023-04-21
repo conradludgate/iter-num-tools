@@ -40,8 +40,10 @@
 //! // and 0.0 up to 2.0 in the y direction with 4 even steps
 //! let it = grid_space([0.0, 0.0]..[1.0, 2.0], [2, 4]);
 //! assert!(it.eq([
-//!     [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
-//!     [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
+//!     [0.0, 0.0], [0.5, 0.0],
+//!     [0.0, 0.5], [0.5, 0.5],
+//!     [0.0, 1.0], [0.5, 1.0],
+//!     [0.0, 1.5], [0.5, 1.5],
 //! ]));
 //!
 //! // count in 2 dimensions (including end points),
@@ -49,9 +51,9 @@
 //! // and 0.0 up to 2.0 in the y direction with 3 even steps in all directions
 //! let it = grid_space([0.0, 0.0]..=[1.0, 2.0], 3);
 //! assert!(it.eq([
-//!     [0.0, 0.0], [0.0, 1.0], [0.0, 2.0],
-//!     [0.5, 0.0], [0.5, 1.0], [0.5, 2.0],
-//!     [1.0, 0.0], [1.0, 1.0], [1.0, 2.0],
+//!     [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
+//!     [0.0, 1.0], [0.5, 1.0], [1.0, 1.0],
+//!     [0.0, 2.0], [0.5, 2.0], [1.0, 2.0],
 //! ]));
 //! ```
 //!
@@ -90,8 +92,10 @@
 //! // stepping by 0.5 each time
 //! let it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
 //! assert!(it.eq([
-//!     [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
-//!     [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
+//!     [0.0, 0.0], [0.5, 0.0],
+//!     [0.0, 0.5], [0.5, 0.5],
+//!     [0.0, 1.0], [0.5, 1.0],
+//!     [0.0, 1.5], [0.5, 1.5],
 //! ]));
 //!
 //! // count in 2 dimensions,
@@ -99,8 +103,8 @@
 //! // and 0.0 up to 2.0 in the y direction stepping by 1.0 each time
 //! let it = arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]);
 //! assert!(it.eq([
-//!     [0.0, 0.0], [0.0, 1.0],
-//!     [0.5, 0.0], [0.5, 1.0],
+//!     [0.0, 0.0], [0.5, 0.0],
+//!     [0.0, 1.0], [0.5, 1.0],
 //! ]));
 //! ```
 //!
@@ -129,6 +133,10 @@
 #![cfg_attr(feature = "iter_advance_by", feature(iter_advance_by))]
 #![cfg_attr(not(test), no_std)]
 
+#[cfg(test)]
+#[macro_use]
+extern crate pretty_assertions;
+
 mod accum;
 mod adapter;
 mod arange;
@@ -138,10 +146,24 @@ mod linspace;
 mod logspace;
 mod space;
 
-pub use accum::{Sum2, Product2};
+pub use accum::{Product2, Sum2};
 pub use adapter::IterAdapter;
 pub use arange::{arange, Arange};
 pub use arange_grid::{arange_grid, ArangeGrid};
 pub use gridspace::{grid_space, GridSpace};
 pub use linspace::{lin_space, LinSpace};
 pub use logspace::{log_space, LogSpace};
+
+#[cfg(test)]
+#[track_caller]
+pub fn check_double_ended_iter<T: PartialEq + core::fmt::Debug, const N: usize>(
+    i: impl DoubleEndedIterator<Item = T> + Clone,
+    mut expected: [T; N],
+) {
+    let actual = i.clone().collect::<Vec<_>>();
+    assert_eq!(actual, expected);
+
+    let actual = i.rev().collect::<Vec<_>>();
+    expected.reverse();
+    assert_eq!(actual, expected);
+}

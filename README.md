@@ -1,6 +1,6 @@
 # iter-num-tools
 
-[![Build Status](https://img.shields.io/github/workflow/status/conradludgate/iter-num-tools/coverage/main?style=flat-square)][actions]
+[![Build Status](https://img.shields.io/github/actions/workflow/status/conradludgate/iter-num-tools/test.yml?branch=main&style=flat-square)][actions]
 [![Rust Documentation](https://img.shields.io/crates/v/iter-num-tools?color=blue&label=docs&style=flat-square)][docs.rs]
 [![Latest Version](https://img.shields.io/crates/d/iter-num-tools?style=flat-square)][crates.io]
 [![Code Coverage](https://img.shields.io/codecov/c/gh/conradludgate/iter-num-tools?style=flat-square)][codecov]
@@ -40,8 +40,10 @@ use iter_num_tools::grid_space;
 // and 0.0 up to 2.0 in the y direction with 4 even steps
 let it = grid_space([0.0, 0.0]..[1.0, 2.0], [2, 4]);
 assert!(it.eq([
-    [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
-    [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
+    [0.0, 0.0], [0.5, 0.0],
+    [0.0, 0.5], [0.5, 0.5],
+    [0.0, 1.0], [0.5, 1.0],
+    [0.0, 1.5], [0.5, 1.5],
 ]));
 
 // count in 2 dimensions (including end points),
@@ -49,9 +51,9 @@ assert!(it.eq([
 // and 0.0 up to 2.0 in the y direction with 3 even steps in all directions
 let it = grid_space([0.0, 0.0]..=[1.0, 2.0], 3);
 assert!(it.eq([
-    [0.0, 0.0], [0.0, 1.0], [0.0, 2.0],
-    [0.5, 0.0], [0.5, 1.0], [0.5, 2.0],
-    [1.0, 0.0], [1.0, 1.0], [1.0, 2.0],
+    [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
+    [0.0, 1.0], [0.5, 1.0], [1.0, 1.0],
+    [0.0, 2.0], [0.5, 2.0], [1.0, 2.0],
 ]));
 ```
 
@@ -91,8 +93,10 @@ use iter_num_tools::arange_grid;
 // stepping by 0.5 each time
 let it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
 assert!(it.eq([
-    [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
-    [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
+    [0.0, 0.0], [0.5, 0.0],
+    [0.0, 0.5], [0.5, 0.5],
+    [0.0, 1.0], [0.5, 1.0],
+    [0.0, 1.5], [0.5, 1.5],
 ]));
 
 // count in 2 dimensions,
@@ -100,8 +104,8 @@ assert!(it.eq([
 // and 0.0 up to 2.0 in the y direction stepping by 1.0 each time
 let it = arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]);
 assert!(it.eq([
-    [0.0, 0.0], [0.0, 1.0],
-    [0.5, 0.0], [0.5, 1.0],
+    [0.0, 0.0], [0.5, 0.0],
+    [0.0, 1.0], [0.5, 1.0],
 ]));
 ```
 

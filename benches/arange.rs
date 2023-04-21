@@ -11,11 +11,13 @@ pub fn bench_arange(c: &mut Criterion) {
     group.bench_function("arange [0,20) steps 1.0 std", |b| {
         b.iter(|| {
             let mut start = 0.0;
-            (0..20).map(|_| {
-                let result = start;
-                start += 1.0;
-                result
-            }).collect::<Vec<f32>>()
+            (0..20)
+                .map(|_| {
+                    let result = start;
+                    start += 1.0;
+                    result
+                })
+                .collect::<Vec<f32>>()
         })
     });
 

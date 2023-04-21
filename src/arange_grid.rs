@@ -2,7 +2,7 @@ use crate::{
     arange::ArangeImpl,
     gridspace::{GridSpace, GridSpaceInterpolation},
 };
-use array_iter_tools::{ArrayIterator, IntoArrayIterator};
+use array_bin_ops::Array;
 use core::ops::Range;
 
 /// Iterator returned by [`arange_grid`]
@@ -14,26 +14,28 @@ pub type ArangeGrid<T, const N: usize> = GridSpace<T, N>;
 /// use iter_num_tools::arange_grid;
 ///
 /// let it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
-/// assert!(it.eq(vec![
-///     [0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [0.0, 1.5],
-///     [0.5, 0.0], [0.5, 0.5], [0.5, 1.0], [0.5, 1.5],
+/// assert!(it.eq([
+///     [0.0, 0.0], [0.5, 0.0],
+///     [0.0, 0.5], [0.5, 0.5],
+///     [0.0, 1.0], [0.5, 1.0],
+///     [0.0, 1.5], [0.5, 1.5],
 /// ]));
 ///
 /// // different step count in each direction
 /// let it = arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]);
-/// assert!(it.eq(vec![
-///     [0.0, 0.0], [0.0, 1.0],
-///     [0.5, 0.0], [0.5, 1.0],
+/// assert!(it.eq([
+///     [0.0, 0.0], [0.5, 0.0],
+///     [0.0, 1.0], [0.5, 1.0],
 /// ]));
 ///
 /// // even 3d spaces
 /// let it = arange_grid([0.0, 0.0, 0.0]..[2.0, 2.0, 2.0], 1.0);
-/// assert!(it.eq(vec![
-///     [0.0, 0.0, 0.0], [0.0, 0.0, 1.0],
-///     [0.0, 1.0, 0.0], [0.0, 1.0, 1.0],
+/// assert!(it.eq([
+///     [0.0, 0.0, 0.0], [1.0, 0.0, 0.0],
+///     [0.0, 1.0, 0.0], [1.0, 1.0, 0.0],
 ///
-///     [1.0, 0.0, 0.0], [1.0, 0.0, 1.0],
-///     [1.0, 1.0, 0.0], [1.0, 1.0, 1.0],
+///     [0.0, 0.0, 1.0], [1.0, 0.0, 1.0],
+///     [0.0, 1.0, 1.0], [1.0, 1.0, 1.0],
 /// ]));
 /// ```
 pub fn arange_grid<F, R, S, const N: usize>(range: R, step: S) -> ArangeGrid<F, N>
@@ -56,19 +58,17 @@ where
     fn from((range, step): (Range<[F; N]>, [F; N])) -> Self {
         let Range { start, end } = range;
 
-        let (lerps, steps) = start
-            .into_array_iter()
-            .zip(end)
-            .zip(step)
-            .map(|((start, end), step)| {
-                let ArangeImpl { interpolate, steps } = (start..end, step).into();
-                (interpolate, steps)
-            })
-            .unzip();
+        let mut len = 1;
+        let ranges = Array(start).zip_map(end, |start, end| start..end);
+        let lerps = Array(ranges).zip_map(step, |range, step| {
+            let ArangeImpl { interpolate, steps } = (range, step).into();
+            len *= steps;
+            (interpolate, steps)
+        });
 
         Self {
-            len: steps.iter().product(),
-            interpolate: GridSpaceInterpolation(lerps, steps),
+            len,
+            interpolate: GridSpaceInterpolation(lerps),
         }
     }
 }
@@ -80,45 +80,32 @@ where
     fn from((range, step): (Range<[F; N]>, F)) -> Self {
         let Range { start, end } = range;
 
-        let (lerps, steps) = start
-            .into_array_iter()
-            .zip(end)
-            .map(|(start, end)| {
-                let ArangeImpl { interpolate, steps } = (start..end, step).into();
-                (interpolate, steps)
-            })
-            .unzip();
+        let mut len = 1;
+        let lerps = Array(start).zip_map(end, |start, end| {
+            let ArangeImpl { interpolate, steps } = (start..end, step).into();
+            len *= steps;
+            (interpolate, steps)
+        });
 
         Self {
-            len: steps.iter().product(),
-            interpolate: GridSpaceInterpolation(lerps, steps),
+            len,
+            interpolate: GridSpaceInterpolation(lerps),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::check_double_ended_iter;
+
     use super::*;
 
     #[test]
     fn test_arange_grid_exclusive() {
-        let it = arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]);
-        assert!(it.eq(vec![[0.0, 0.0], [0.0, 1.0], [0.5, 0.0], [0.5, 1.0]]));
-    }
-
-    #[test]
-    fn test_arange_grid_exclusive_rev() {
-        let it = arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5);
-        assert!(it.rev().eq(vec![
-            [0.5, 1.5],
-            [0.5, 1.0],
-            [0.5, 0.5],
-            [0.5, 0.0],
-            [0.0, 1.5],
-            [0.0, 1.0],
-            [0.0, 0.5],
-            [0.0, 0.0],
-        ]));
+        check_double_ended_iter(
+            arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]),
+            [[0.0, 0.0], [0.5, 0.0], [0.0, 1.0], [0.5, 1.0]],
+        );
     }
 
     #[test]
