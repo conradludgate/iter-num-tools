@@ -45,6 +45,25 @@ impl<I> Space<I> {
     }
 }
 
+impl<I: Interpolate + Copy> Space<I> {
+    /// Return the lower bound of the space.
+    ///
+    /// Note: the value returned by this method is unspecified after
+    /// the range has been iterated to exhaustion.
+    pub fn start(&self) -> I::Item {
+        self.interpolate.interpolate(self.range.start)
+    }
+
+    /// Returns the upper bound of the space (if inclusive, it is the
+    /// last element of the iterator).
+    ///
+    /// Note: the value returned by this method is unspecified after
+    /// the range has been iterated to exhaustion.
+    pub fn end(&self) -> I::Item {
+        self.interpolate.interpolate(self.range.end)
+    }
+}
+
 impl<I: Interpolate + Copy> Iterator for Space<I> {
     type Item = I::Item;
 
