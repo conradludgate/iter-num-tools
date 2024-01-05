@@ -67,7 +67,7 @@ impl<I: Interpolate + Copy> Iterator for Space<I> {
     }
 
     #[cfg(feature = "iter_advance_by")]
-    fn advance_by(&mut self, n: usize) -> Result<(), usize> {
+    fn advance_by(&mut self, n: usize) -> Result<(), core::num::NonZeroUsize> {
         self.range.advance_by(n)
     }
 
@@ -90,7 +90,7 @@ impl<I: Interpolate + Copy> DoubleEndedIterator for Space<I> {
     }
 
     #[cfg(feature = "iter_advance_by")]
-    fn advance_back_by(&mut self, n: usize) -> Result<(), usize> {
+    fn advance_back_by(&mut self, n: usize) -> Result<(), core::num::NonZeroUsize> {
         self.range.advance_back_by(n)
     }
 

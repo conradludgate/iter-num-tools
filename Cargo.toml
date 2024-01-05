@@ -22,9 +22,9 @@ trusted_len = []
 iter_advance_by = []
 
 [dev-dependencies]
-itertools = "0.10"
+itertools = "0.12.0"
 itertools-num = "0.1.3"
-criterion = "0.4.0"
+criterion = "0.5.1"
 pretty_assertions = "1"
 
 [[bench]]
