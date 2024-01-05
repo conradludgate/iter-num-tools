@@ -1,16 +1,16 @@
 use crate::{
     arange::ToArange,
-    gridspace::{GridSpace, GridSpaceInterpolation},
+    gridspace::{GridSpace, GridSpaceInterpolation, Linear},
     IntoGridSpace,
 };
 use array_bin_ops::Array;
 use core::ops::Range;
 
 /// [`Iterator`] returned by [`arange_grid`]
-pub type ArangeGrid<T, const N: usize> = GridSpace<T, N>;
+pub type ArangeGrid<T, R, const N: usize> = GridSpace<T, R, N>;
 
 /// [`IntoIterator`] returned by [`ToGridSpace::into_grid_space`]
-pub type IntoArangeGrid<T, const N: usize> = IntoGridSpace<T, N>;
+pub type IntoArangeGrid<T, R, const N: usize> = IntoGridSpace<T, R, N>;
 
 /// Creates a grid space over the range made up of fixed step intervals
 ///
@@ -42,7 +42,10 @@ pub type IntoArangeGrid<T, const N: usize> = IntoGridSpace<T, N>;
 ///     [0.0, 1.0, 1.0], [1.0, 1.0, 1.0],
 /// ]));
 /// ```
-pub fn arange_grid<R, S, const N: usize>(range: R, step: S) -> ArangeGrid<R::Item, N>
+pub fn arange_grid<R, S, const N: usize>(
+    range: R,
+    step: S,
+) -> ArangeGrid<R::Item, <R::Range as IntoIterator>::IntoIter, N>
 where
     R: ToArangeGrid<S, N>,
 {
@@ -53,8 +56,10 @@ where
 pub trait ToArangeGrid<S, const N: usize> {
     /// The item that this is a arange grid over
     type Item;
+    /// The type of range this space spans - eg inclusive or exclusive
+    type Range: IntoIterator<Item = usize>;
     /// Create the arange grid
-    fn into_arange_grid(self, step: S) -> IntoArangeGrid<Self::Item, N>;
+    fn into_arange_grid(self, step: S) -> IntoArangeGrid<Self::Item, Self::Range, N>;
 }
 
 impl<F: Copy, const N: usize> ToArangeGrid<[F; N], N> for Range<[F; N]>
@@ -62,19 +67,20 @@ where
     Range<F>: ToArange<F>,
 {
     type Item = <Range<F> as ToArange<F>>::Item;
+    type Range = Range<usize>;
 
-    fn into_arange_grid(self, step: [F; N]) -> IntoArangeGrid<Self::Item, N> {
+    fn into_arange_grid(self, step: [F; N]) -> IntoArangeGrid<Self::Item, Self::Range, N> {
         let Range { start, end } = self;
 
         let mut len = 1;
         let ranges = Array(start).zip_map(end, |start, end| start..end);
         let lerps = Array(ranges).zip_map(step, |range, step| {
-            let space = range.into_arange(step);
-            len *= space.len;
+            let space = Linear::new(range.into_arange(step));
+            len *= space.length.get();
             space
         });
 
-        IntoArangeGrid::new(len, GridSpaceInterpolation(lerps))
+        IntoArangeGrid::new_exclusive(len, GridSpaceInterpolation(lerps))
     }
 }
 impl<F: Copy, const N: usize> ToArangeGrid<F, N> for Range<[F; N]>
@@ -82,23 +88,26 @@ where
     Range<F>: ToArange<F>,
 {
     type Item = <Range<F> as ToArange<F>>::Item;
+    type Range = Range<usize>;
 
-    fn into_arange_grid(self, step: F) -> IntoArangeGrid<Self::Item, N> {
+    fn into_arange_grid(self, step: F) -> IntoArangeGrid<Self::Item, Self::Range, N> {
         let Range { start, end } = self;
 
         let mut len = 1;
         let lerps = Array(start).zip_map(end, |start, end| {
-            let space = (start..end).into_arange(step);
-            len *= space.len;
+            let space = Linear::new((start..end).into_arange(step));
+            len *= space.length.get();
             space
         });
 
-        IntoArangeGrid::new(len, GridSpaceInterpolation(lerps))
+        IntoArangeGrid::new_exclusive(len, GridSpaceInterpolation(lerps))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use core::ops::Bound;
+
     use crate::check_double_ended_iter;
 
     use super::*;
@@ -129,5 +138,21 @@ mod tests {
         }
 
         assert_eq!(it.len(), expected_len);
+    }
+
+    #[test]
+    fn test_arange_grid_bounds() {
+        assert_eq!(
+            arange_grid([0.0, 0.0]..[1.0, 2.0], [0.5, 1.0]).bounds(),
+            (Bound::Included([0.0, 0.0]), Bound::Excluded([1.0, 2.0]))
+        );
+    }
+
+    #[test]
+    fn test_arange_grid_single_bounds() {
+        assert_eq!(
+            arange_grid([0.0, 0.0]..[1.0, 2.0], 0.5).bounds(),
+            (Bound::Included([0.0, 0.0]), Bound::Excluded([1.0, 2.0]))
+        );
     }
 }

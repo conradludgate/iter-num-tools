@@ -155,7 +155,7 @@ pub use logspace::{log_space, IntoLogSpace, LogSpace, ToLogSpace};
 
 #[cfg(test)]
 #[track_caller]
-pub fn check_double_ended_iter<T: PartialEq + core::fmt::Debug, const N: usize>(
+fn check_double_ended_iter<T: PartialEq + core::fmt::Debug, const N: usize>(
     i: impl DoubleEndedIterator<Item = T> + Clone,
     mut expected: [T; N],
 ) {

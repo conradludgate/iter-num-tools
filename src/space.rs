@@ -1,29 +1,55 @@
 use core::iter::FusedIterator;
-use core::ops::Range;
+use core::ops::{Bound, Range, RangeBounds, RangeInclusive};
 
-pub trait Interpolate {
+pub trait Interpolate: Sized {
     type Item;
     fn interpolate(self, x: usize) -> Self::Item;
+
+    /// Some interpolations don't have correct interpolation points for the end bounds
+    /// calculation. Notably the grid-based interpolations. This is a hack to provide a fix for them.
+    fn interpolate_exclusive_end(self, x: usize) -> Self::Item {
+        self.interpolate(x)
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct IntoSpace<I> {
-    pub interpolate: I,
-    pub len: usize,
+pub struct IntoSpace<I, R> {
+    pub(crate) interpolate: I,
+    pub(crate) range: R,
 }
 
-impl<I> IntoSpace<I> {
-    pub fn new(len: usize, interpolate: I) -> Self {
-        IntoSpace { interpolate, len }
-    }
-    pub fn into_space(self) -> Space<I> {
-        Space::new(self.len, self.interpolate)
+impl<I, R> IntoSpace<I, R> {
+    pub fn new(interpolate: I, range: R) -> Self {
+        IntoSpace { interpolate, range }
     }
 }
 
-impl<I: Interpolate + Copy> IntoIterator for IntoSpace<I> {
+impl<I> IntoSpace<I, Range<usize>> {
+    pub(crate) fn new_exclusive(steps: usize, interpolate: I) -> Self {
+        let range = 0..steps;
+        IntoSpace { interpolate, range }
+    }
+}
+
+impl<I> IntoSpace<I, RangeInclusive<usize>> {
+    pub(crate) fn new_inclusive(steps: usize, interpolate: I) -> Self {
+        let mut range = 0..=steps;
+        // trim the end
+        let _ = range.next_back();
+
+        IntoSpace { interpolate, range }
+    }
+}
+
+impl<I, R: IntoIterator<Item = usize>> IntoSpace<I, R> {
+    pub fn into_space(self) -> Space<I, R::IntoIter> {
+        Space::new(self.interpolate, self.range.into_iter())
+    }
+}
+
+impl<I: Interpolate + Copy, R: IntoIterator<Item = usize>> IntoIterator for IntoSpace<I, R> {
     type Item = I::Item;
-    type IntoIter = Space<I>;
+    type IntoIter = Space<I, R::IntoIter>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.into_space()
@@ -31,21 +57,40 @@ impl<I: Interpolate + Copy> IntoIterator for IntoSpace<I> {
 }
 
 #[derive(Clone, Debug)]
-pub struct Space<I> {
+pub struct Space<I, R> {
     interpolate: I,
-    range: Range<usize>,
+    range: R,
 }
 
-impl<I> Space<I> {
-    pub fn new(len: usize, interpolate: I) -> Self {
-        Space {
-            interpolate,
-            range: 0..len,
-        }
+impl<I, R> Space<I, R> {
+    pub fn new(interpolate: I, range: R) -> Self {
+        Space { interpolate, range }
     }
 }
 
-impl<I: Interpolate + Copy> Iterator for Space<I> {
+impl<I: Interpolate + Copy, R: RangeBounds<usize>> Space<I, R> {
+    pub fn start_bound(&self) -> Bound<I::Item> {
+        match self.range.start_bound() {
+            Bound::Included(i) => Bound::Included(self.interpolate.interpolate(*i)),
+            Bound::Excluded(i) => Bound::Excluded(self.interpolate.interpolate(*i)),
+            Bound::Unbounded => Bound::Unbounded,
+        }
+    }
+
+    pub fn end_bound(&self) -> Bound<I::Item> {
+        match self.range.end_bound() {
+            Bound::Included(i) => Bound::Included(self.interpolate.interpolate(*i)),
+            Bound::Excluded(i) => Bound::Excluded(self.interpolate.interpolate_exclusive_end(*i)),
+            Bound::Unbounded => Bound::Unbounded,
+        }
+    }
+
+    pub fn bounds(&self) -> (Bound<I::Item>, Bound<I::Item>) {
+        (self.start_bound(), self.end_bound())
+    }
+}
+
+impl<I: Interpolate + Copy, R: Iterator<Item = usize>> Iterator for Space<I, R> {
     type Item = I::Item;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -56,14 +101,14 @@ impl<I: Interpolate + Copy> Iterator for Space<I> {
     where
         Self: Sized,
     {
-        self.len()
+        self.range.count()
     }
 
-    fn last(mut self) -> Option<Self::Item>
+    fn last(self) -> Option<Self::Item>
     where
         Self: Sized,
     {
-        self.next_back()
+        self.range.last().map(|x| self.interpolate.interpolate(x))
     }
 
     #[cfg(feature = "iter_advance_by")]
@@ -76,12 +121,13 @@ impl<I: Interpolate + Copy> Iterator for Space<I> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let len = self.len();
-        (len, Some(len))
+        self.range.size_hint()
     }
 }
 
-impl<I: Interpolate + Copy> DoubleEndedIterator for Space<I> {
+impl<I: Interpolate + Copy, R: DoubleEndedIterator<Item = usize>> DoubleEndedIterator
+    for Space<I, R>
+{
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         self.range
@@ -101,16 +147,16 @@ impl<I: Interpolate + Copy> DoubleEndedIterator for Space<I> {
     }
 }
 
-impl<I: Interpolate + Copy> ExactSizeIterator for Space<I> {
+impl<I: Interpolate + Copy, R: ExactSizeIterator<Item = usize>> ExactSizeIterator for Space<I, R> {
     #[inline]
     fn len(&self) -> usize {
         self.range.len()
     }
 }
 
-impl<I: Interpolate + Copy> FusedIterator for Space<I> {}
+impl<I: Interpolate + Copy, R: FusedIterator<Item = usize>> FusedIterator for Space<I, R> {}
 
 #[cfg(feature = "trusted_len")]
 use core::iter::TrustedLen;
 #[cfg(feature = "trusted_len")]
-unsafe impl<I: Interpolate + Copy> TrustedLen for Space<I> {}
+unsafe impl<I: Interpolate + Copy, R: TrustedLen<Item = usize>> TrustedLen for Space<I, R> {}
