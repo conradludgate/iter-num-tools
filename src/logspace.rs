@@ -1,7 +1,11 @@
 use core::ops::{Range, RangeInclusive};
 use num_traits::{real::Real, FromPrimitive};
 
-use crate::space::{Interpolate, IntoSpace, Space};
+use crate::{
+    linspace::LinearInterpolation,
+    space::{Interpolate, IntoSpace, Space},
+    ToLinSpace,
+};
 
 /// Creates a logarithmic space over range with a fixed number of steps
 ///
@@ -34,10 +38,7 @@ where
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct LogarithmicInterpolation<T> {
-    pub start: T,
-    pub step: T,
-}
+pub struct LogarithmicInterpolation<T>(LinearInterpolation<T>);
 
 /// A helper trait for [`log_space`]
 pub trait ToLogSpace {
@@ -51,11 +52,10 @@ pub trait ToLogSpace {
     fn into_log_space(self, step: usize) -> IntoLogSpace<Self::Item, Self::Range>;
 }
 
-impl<T: Real> Interpolate for LogarithmicInterpolation<T> {
+impl<T: Real + FromPrimitive> Interpolate for LogarithmicInterpolation<T> {
     type Item = T;
     fn interpolate(self, x: usize) -> T {
-        let Self { start, step } = self;
-        start * step.powi(x as i32)
+        self.0.interpolate(x).exp2()
     }
 }
 
@@ -64,9 +64,10 @@ impl<T: Real + FromPrimitive> ToLogSpace for Range<T> {
     type Range = Range<usize>;
 
     fn into_log_space(self, steps: usize) -> IntoLogSpace<Self::Item, Self::Range> {
-        let Range { start, end } = self;
-        let step = (end / start).powf(T::from_usize(steps).unwrap().recip());
-        IntoLogSpace::new_exclusive(steps, LogarithmicInterpolation { start, step })
+        let Self { start, end } = self;
+        (start.log2()..end.log2())
+            .into_lin_space(steps)
+            .map(LogarithmicInterpolation)
     }
 }
 
@@ -76,8 +77,9 @@ impl<T: Real + FromPrimitive> ToLogSpace for RangeInclusive<T> {
 
     fn into_log_space(self, steps: usize) -> IntoLogSpace<Self::Item, Self::Range> {
         let (start, end) = self.into_inner();
-        let step = (end / start).powf(T::from_usize(steps - 1).unwrap().recip());
-        IntoLogSpace::new_inclusive(steps, LogarithmicInterpolation { start, step })
+        (start.log2()..=end.log2())
+            .into_lin_space(steps)
+            .map(LogarithmicInterpolation)
     }
 }
 

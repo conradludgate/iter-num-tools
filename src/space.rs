@@ -22,6 +22,13 @@ impl<I, R> IntoSpace<I, R> {
     pub fn new(interpolate: I, range: R) -> Self {
         IntoSpace { interpolate, range }
     }
+
+    pub(crate) fn map<J>(self, f: impl FnOnce(I) -> J) -> IntoSpace<J, R> {
+        IntoSpace {
+            interpolate: f(self.interpolate),
+            range: self.range,
+        }
+    }
 }
 
 impl<I> IntoSpace<I, Range<usize>> {
