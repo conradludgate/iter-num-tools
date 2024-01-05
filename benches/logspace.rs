@@ -1,25 +1,17 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use iter_num_tools::{lin_space, log_space};
 
+fn bench(i: impl Iterator<Item = f32>) -> f32 {
+    black_box(black_box(i).sum())
+}
+
 pub fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("logspace [1,1000) x20", |b| {
-        b.iter(|| log_space(1.0..1000.0, 20).collect::<Vec<f32>>())
+    c.bench_function("logspace [1,1000) x200", |b| {
+        b.iter(|| bench(log_space(1.0..1000.0, 200)))
     });
 
-    c.bench_function("logspace [1,1000) x20 std", |b| {
-        b.iter(|| {
-            lin_space(1.0f32.log2()..1000.0f32.log2(), 20)
-                .map(f32::exp2)
-                .collect::<Vec<f32>>()
-        })
-    });
-
-    c.bench_function("logspace [1,1000) x20 std", |b| {
-        b.iter(|| {
-            lin_space(1.0f32.log2()..1000.0f32.log2(), 20)
-                .map(f32::exp2)
-                .collect::<Vec<f32>>()
-        })
+    c.bench_function("logspace [1,1000) x200 std", |b| {
+        b.iter(|| bench(lin_space(1.0f32.log2()..1000.0f32.log2(), 200).map(f32::exp2)))
     });
 }
 

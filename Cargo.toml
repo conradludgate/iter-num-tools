@@ -38,3 +38,7 @@ harness = false
 [[bench]]
 name = "arange"
 harness = false
+
+[[bench]]
+name = "gridspace"
+harness = false
