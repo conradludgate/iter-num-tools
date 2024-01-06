@@ -10,7 +10,7 @@
 [docs.rs]: https://docs.rs/iter_num_tools
 [codecov]: https://codecov.io/gh/conradludgate/iter-num-tools
 
-This is a collection if iterator extensions that make heavy use of number properties. Mostly extending on Range.
+This is a collection of iterator extensions that make heavy use of number properties. Mostly extending on Range.
 
 ## LinSpace
 
