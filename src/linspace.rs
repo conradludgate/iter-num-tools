@@ -16,7 +16,10 @@ use num_traits::{FromPrimitive, Num};
 /// assert!(it.eq(vec![20.0, 20.5]));
 /// ```
 #[inline]
-pub fn lin_space<R>(range: R, steps: usize) -> LinSpace<R::Item>
+pub fn lin_space<R>(
+    range: R,
+    steps: usize,
+) -> LinSpace<R::Item, <R::Range as IntoIterator>::IntoIter>
 where
     R: ToLinSpace,
 {
@@ -33,27 +36,33 @@ pub struct LinearInterpolation<T> {
 pub trait ToLinSpace {
     /// The item that this is a linear space over
     type Item;
+
+    /// The type of range this space spans - eg inclusive or exclusive
+    type Range: IntoIterator<Item = usize>;
+
     /// Create the lin space
-    fn into_lin_space(self, step: usize) -> IntoLinSpace<Self::Item>;
+    fn into_lin_space(self, step: usize) -> IntoLinSpace<Self::Item, Self::Range>;
 }
 
 impl<T: Num + FromPrimitive + Copy> ToLinSpace for Range<T> {
     type Item = T;
+    type Range = Range<usize>;
 
-    fn into_lin_space(self, steps: usize) -> IntoLinSpace<Self::Item> {
+    fn into_lin_space(self, steps: usize) -> IntoLinSpace<Self::Item, Self::Range> {
         let Range { start, end } = self;
         let step = (end - start) / T::from_usize(steps).unwrap();
-        IntoLinSpace::new(steps, LinearInterpolation { start, step })
+        IntoLinSpace::new_exclusive(steps, LinearInterpolation { start, step })
     }
 }
 
 impl<T: Num + FromPrimitive + Copy> ToLinSpace for RangeInclusive<T> {
     type Item = T;
+    type Range = RangeInclusive<usize>;
 
-    fn into_lin_space(self, steps: usize) -> IntoLinSpace<Self::Item> {
+    fn into_lin_space(self, steps: usize) -> IntoLinSpace<Self::Item, Self::Range> {
         let (start, end) = self.into_inner();
         let step = (end - start) / T::from_usize(steps - 1).unwrap();
-        IntoLinSpace::new(steps, LinearInterpolation { start, step })
+        IntoLinSpace::new_inclusive(steps, LinearInterpolation { start, step })
     }
 }
 
@@ -66,13 +75,15 @@ impl<T: Num + FromPrimitive> Interpolate for LinearInterpolation<T> {
 }
 
 /// [`Iterator`] returned by [`lin_space`]
-pub type LinSpace<T> = Space<LinearInterpolation<T>>;
+pub type LinSpace<T, R> = Space<LinearInterpolation<T>, R>;
 
 /// [`IntoIterator`] returned by [`ToLinSpace::into_lin_space`]
-pub type IntoLinSpace<T> = IntoSpace<LinearInterpolation<T>>;
+pub type IntoLinSpace<T, R> = IntoSpace<LinearInterpolation<T>, R>;
 
 #[cfg(test)]
 mod tests {
+    use core::ops::Bound;
+
     use super::*;
 
     #[test]
@@ -101,16 +112,16 @@ mod tests {
         assert_eq!(it.size_hint(), (expected_len, Some(expected_len)));
 
         while expected_len > 0 {
-            assert_eq!(it.len(), expected_len);
+            assert_eq!(it.size_hint(), (expected_len, Some(expected_len)));
             it.next();
             expected_len -= 1;
 
-            assert_eq!(it.len(), expected_len);
+            assert_eq!(it.size_hint(), (expected_len, Some(expected_len)));
             it.next_back();
             expected_len -= 1;
         }
 
-        assert_eq!(it.len(), expected_len);
+        assert_eq!(it.size_hint(), (expected_len, Some(expected_len)));
     }
 
     #[test]
@@ -135,5 +146,21 @@ mod tests {
 
         it.advance_back_by(2).unwrap();
         assert_eq!(it.next_back(), Some(3.0));
+    }
+
+    #[test]
+    fn test_lin_inclusive_bounds() {
+        assert_eq!(
+            lin_space(0.0..=2.0, 5).bounds(),
+            (Bound::Included(0.0), Bound::Included(2.0))
+        );
+    }
+
+    #[test]
+    fn test_lin_exclusive_bounds() {
+        assert_eq!(
+            lin_space(0.0..2.0, 4).bounds(),
+            (Bound::Included(0.0), Bound::Excluded(2.0))
+        );
     }
 }

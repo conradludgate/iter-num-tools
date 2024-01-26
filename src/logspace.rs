@@ -1,7 +1,11 @@
 use core::ops::{Range, RangeInclusive};
 use num_traits::{real::Real, FromPrimitive};
 
-use crate::space::{Interpolate, IntoSpace, Space};
+use crate::{
+    linspace::LinearInterpolation,
+    space::{Interpolate, IntoSpace, Space},
+    ToLinSpace,
+};
 
 /// Creates a logarithmic space over range with a fixed number of steps
 ///
@@ -23,7 +27,10 @@ use crate::space::{Interpolate, IntoSpace, Space};
 /// // all approx equal
 /// assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 /// ```
-pub fn log_space<R>(range: R, steps: usize) -> LogSpace<R::Item>
+pub fn log_space<R>(
+    range: R,
+    steps: usize,
+) -> LogSpace<R::Item, <R::Range as IntoIterator>::IntoIter>
 where
     R: ToLogSpace,
 {
@@ -31,54 +38,60 @@ where
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct LogarithmicInterpolation<T> {
-    pub start: T,
-    pub step: T,
-}
+pub struct LogarithmicInterpolation<T>(LinearInterpolation<T>);
 
 /// A helper trait for [`log_space`]
 pub trait ToLogSpace {
     /// The item that this is a logarithmic space over
     type Item;
+
+    /// The type of range this space spans - eg inclusive or exclusive
+    type Range: IntoIterator<Item = usize>;
+
     /// Create the log space
-    fn into_log_space(self, step: usize) -> IntoLogSpace<Self::Item>;
+    fn into_log_space(self, step: usize) -> IntoLogSpace<Self::Item, Self::Range>;
 }
 
-impl<T: Real> Interpolate for LogarithmicInterpolation<T> {
+impl<T: Real + FromPrimitive> Interpolate for LogarithmicInterpolation<T> {
     type Item = T;
     fn interpolate(self, x: usize) -> T {
-        let Self { start, step } = self;
-        start * step.powi(x as i32)
+        self.0.interpolate(x).exp2()
     }
 }
 
 impl<T: Real + FromPrimitive> ToLogSpace for Range<T> {
     type Item = T;
+    type Range = Range<usize>;
 
-    fn into_log_space(self, steps: usize) -> IntoLogSpace<Self::Item> {
-        let Range { start, end } = self;
-        let step = (end / start).powf(T::from_usize(steps).unwrap().recip());
-        IntoLogSpace::new(steps, LogarithmicInterpolation { start, step })
+    fn into_log_space(self, steps: usize) -> IntoLogSpace<Self::Item, Self::Range> {
+        let Self { start, end } = self;
+        (start.log2()..end.log2())
+            .into_lin_space(steps)
+            .map(LogarithmicInterpolation)
     }
 }
 
 impl<T: Real + FromPrimitive> ToLogSpace for RangeInclusive<T> {
     type Item = T;
+    type Range = RangeInclusive<usize>;
 
-    fn into_log_space(self, steps: usize) -> IntoLogSpace<Self::Item> {
+    fn into_log_space(self, steps: usize) -> IntoLogSpace<Self::Item, Self::Range> {
         let (start, end) = self.into_inner();
-        let step = (end / start).powf(T::from_usize(steps - 1).unwrap().recip());
-        IntoLogSpace::new(steps, LogarithmicInterpolation { start, step })
+        (start.log2()..=end.log2())
+            .into_lin_space(steps)
+            .map(LogarithmicInterpolation)
     }
 }
 
 /// [`Iterator`] returned by [`log_space`]
-pub type LogSpace<T> = Space<LogarithmicInterpolation<T>>;
+pub type LogSpace<T, R> = Space<LogarithmicInterpolation<T>, R>;
 /// [`IntoIterator`] returned by [`ToLogSpace::into_log_space`]
-pub type IntoLogSpace<T> = IntoSpace<LogarithmicInterpolation<T>>;
+pub type IntoLogSpace<T, R> = IntoSpace<LogarithmicInterpolation<T>, R>;
 
 #[cfg(test)]
 mod tests {
+    use core::ops::Bound;
+
     use super::*;
 
     use itertools::zip_eq;
@@ -115,15 +128,41 @@ mod tests {
         assert_eq!(it.size_hint(), (expected_len, Some(expected_len)));
 
         while expected_len > 0 {
-            assert_eq!(it.len(), expected_len);
+            assert_eq!(it.size_hint(), (expected_len, Some(expected_len)));
             it.next();
             expected_len -= 1;
 
-            assert_eq!(it.len(), expected_len);
+            assert_eq!(it.size_hint(), (expected_len, Some(expected_len)));
             it.next_back();
             expected_len -= 1;
         }
 
-        assert_eq!(it.len(), expected_len);
+        assert_eq!(it.size_hint(), (expected_len, Some(expected_len)));
+    }
+
+    #[test]
+    fn test_log_inclusive_bounds() {
+        let (start, end) = log_space(1.0..=1000.0, 4).bounds();
+        assert!(
+            matches!(start, Bound::Included(x) if (x - 1.0).abs() < 1e-10),
+            "{start:?}"
+        );
+        assert!(
+            matches!(end, Bound::Included(x) if (x - 1000.0).abs() < 1e-10),
+            "{end:?}"
+        );
+    }
+
+    #[test]
+    fn test_log_exclusive_bounds() {
+        let (start, end) = log_space(1.0..1000.0, 3).bounds();
+        assert!(
+            matches!(start, Bound::Included(x) if (x - 1.0).abs() < 1e-10),
+            "{start:?}"
+        );
+        assert!(
+            matches!(end, Bound::Excluded(x) if (x - 1000.0).abs() < 1e-10),
+            "{end:?}"
+        );
     }
 }

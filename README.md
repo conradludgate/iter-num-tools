@@ -132,38 +132,4 @@ assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 
 ## Alternatives
 
-There is already a project called [`itertools-num`](https://docs.rs/itertools-num/0.1.3/itertools_num/) which has quite a few downloads but it
-isn't optimised for speed or flexibility.
-
-(try this benchmark for yourself: clone the repo and run `cargo bench --bench "linspace" --all-features`)
-
-```
-LinSpace/linspace [1.0, 3.0] x100 (iter-num-tools)
-                        time:   [65.311 ns 65.579 ns 65.898 ns]
-LinSpace/linspace [1.0, 3.0] x100 (std)
-                        time:   [67.545 ns 67.762 ns 68.047 ns]
-LinSpace/linspace [1.0, 3.0] x100 (itertools-num)
-                        time:   [117.05 ns 117.59 ns 118.23 ns]
-```
-
-```rust
-fn bench(i: impl Iterator<Item=f64>) -> Vec<f64> {
-    black_box(i.map(|x| x * 2.0).collect())
-}
-
-// first benchmark (fastest)
-bench(iter_num_tools::lin_space(1.0..=3.0, 100));
-
-// second benchmark
-fn lin_space_std(start: f64, end: f64, steps: usize) -> impl Iterator<Item = f64> {
-    let len = end - start;
-    let step = len / steps as f64;
-    (0..=steps).map(move |i| start + i as f64 * step)
-}
-bench(lin_space_std(1.0, 3.0, 100));
-
-// third benchmark (slowest)
-bench(itertools_num::linspace(1.0, 3.0, 100));
-```
-
-It also does not provide any other utilities. Only `linspace` (inclusive) and a 'Cumulative sum' iterator adaptor.
+There is already a project called [`itertools-num`](https://docs.rs/itertools-num/0.1.3/itertools_num/) which has quite a few downloads but it only offers `linspace` (inclusive) and a 'cumulative sum' iterator adaptor.
