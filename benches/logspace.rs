@@ -7,11 +7,19 @@ fn bench(i: impl Iterator<Item = f32>) -> f32 {
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("logspace [1,1000) x200", |b| {
-        b.iter(|| bench(log_space(1.0..1000.0, 200)))
+        b.iter(|| bench(log_space(black_box(1.0..1000.0), black_box(200))))
     });
 
     c.bench_function("logspace [1,1000) x200 std", |b| {
-        b.iter(|| bench(lin_space(1.0f32.log2()..1000.0f32.log2(), 200).map(f32::exp2)))
+        b.iter(|| {
+            bench(
+                lin_space(
+                    black_box(1.0f32).log2()..black_box(1000.0f32).log2(),
+                    black_box(200),
+                )
+                .map(f32::exp2),
+            )
+        })
     });
 }
 
