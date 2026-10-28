@@ -132,38 +132,47 @@ assert!(zip_eq(it, expected).all(|(x, y)| (x-y).abs() < 1e-10));
 
 ## Alternatives
 
-There is already a project called [`itertools-num`](https://docs.rs/itertools-num/0.1.3/itertools_num/) which has quite a few downloads but it
-isn't optimised for speed or flexibility.
+[`itertools-num`](https://docs.rs/itertools-num/0.1.3/itertools_num/) also provides
+inclusive `linspace` and a cumulative-sum iterator adaptor. Performance depends on
+the workload and compiler; this crate also supports exclusive bounds and the
+grid, step and logarithmic iterators described above.
 
-(try this benchmark for yourself: clone the repo and run `cargo bench --bench "linspace" --all-features`)
+### Benchmarks
 
+The linspace comparison generates 200 `f64` values over the inclusive interval
+`[1, 100]` for every implementation. It checks lengths and approximate values
+before timing, then measures both summing and mapping `x * 2.0` into a `Vec`.
+Inputs and outputs pass through `black_box`; construction and, for collection,
+allocation/deallocation are included. The std baseline uses `(0..steps)` and
+`(end - start) / (steps - 1)` to produce the same number of values.
+
+Example results from 2026-10-28, Rust 1.99.1, default features, Linux x86_64,
+AMD Ryzen 9 7950X, pinned to one logical CPU. Criterion 0.5.1, 50 samples,
+1-second warm-up and 3-second measurement per case; point estimates per iteration:
+
+| Implementation | Sum | Map and collect |
+| --- | ---: | ---: |
+| iter-num-tools | 132.43 ns | 141.18 ns |
+| std range and map | 116.50 ns | 84.46 ns |
+| itertools-num 0.1.3 | 120.91 ns | 139.61 ns |
+
+The earlier README timings used a different workload and an unequal-count std
+baseline, so they cannot establish a performance trend. These results do not
+show a general speed advantage for iter-num-tools. Benchmark your own workload;
+CPU, compiler and optional nightly features can change the result.
+
+On nightly-2026-10-24, enabling the existing `trusted_len` feature reduced this
+crate's map-and-collect estimate from 138.12 ns to 84.65 ns; the std baseline was
+85.39 ns and 84.37 ns respectively. That closes the collection gap in this
+workload, rather than establishing a general speed advantage.
+
+Run the comparison on stable Rust with:
+
+```sh
+cargo bench --bench linspace -- --noplot --sample-size 50 --warm-up-time 1 --measurement-time 3
 ```
-LinSpace/linspace [1.0, 3.0] x100 (iter-num-tools)
-                        time:   [65.311 ns 65.579 ns 65.898 ns]
-LinSpace/linspace [1.0, 3.0] x100 (std)
-                        time:   [67.545 ns 67.762 ns 68.047 ns]
-LinSpace/linspace [1.0, 3.0] x100 (itertools-num)
-                        time:   [117.05 ns 117.59 ns 118.23 ns]
-```
 
-```rust
-fn bench(i: impl Iterator<Item=f64>) -> Vec<f64> {
-    black_box(i.map(|x| x * 2.0).collect())
-}
-
-// first benchmark (fastest)
-bench(iter_num_tools::lin_space(1.0..=3.0, 100));
-
-// second benchmark
-fn lin_space_std(start: f64, end: f64, steps: usize) -> impl Iterator<Item = f64> {
-    let len = end - start;
-    let step = len / steps as f64;
-    (0..=steps).map(move |i| start + i as f64 * step)
-}
-bench(lin_space_std(1.0, 3.0, 100));
-
-// third benchmark (slowest)
-bench(itertools_num::linspace(1.0, 3.0, 100));
-```
-
-It also does not provide any other utilities. Only `linspace` (inclusive) and a 'Cumulative sum' iterator adaptor.
+The `arange`, `gridspace` and `logspace` benchmark targets cover other operations.
+The grid case visits 200 × 200 points. The logspace alternative uses this crate's
+`lin_space` followed by `exp2`, rather than an independent std implementation;
+floating-point results need not be bit-identical.
